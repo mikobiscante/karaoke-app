@@ -151,8 +151,7 @@ export default function RoomPage() {
   );
 }
 
-/* QRCodeClient: dynamic import of qrcode.react to avoid SSR issues */
-import dynamic from "next/dynamic";
+
 const QRCodeCanvas = dynamic(() => import("qrcode.react").then((m) => m.QRCodeCanvas), { ssr: false });
 
 function QRCodeClient({ roomId }) {
