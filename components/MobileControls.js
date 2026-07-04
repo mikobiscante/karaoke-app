@@ -1,30 +1,14 @@
 // components/MobileControls.js
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ref, push, set, onValue } from "firebase/database";
 import { db } from "../utils/firebase";
 
-export default function MobileControls({ roomId, clientId }) {
-  const [input, setInput] = useState("");
-  const [previewId, setPreviewId] = useState(null);
-  const [adding, setAdding] = useState(false);
+export default function MobileControls({ roomId }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [preview, setPreview] = useState(null);
   const [queue, setQueue] = useState([]);
-
-  const extractVideoId = (urlOrId) => {
-    try {
-      if (!urlOrId) return null;
-      if (/^[a-zA-Z0-9_-]{11}$/.test(urlOrId)) return urlOrId;
-      const u = new URL(urlOrId);
-      if (u.hostname.includes("youtube.com")) return u.searchParams.get("v");
-      if (u.hostname === "youtu.be") return u.pathname.slice(1);
-    } catch (e) {
-      if (/^[a-zA-Z0-9_-]{11}$/.test(urlOrId)) return urlOrId;
-    }
-    return null;
-  };
-
-  useEffect(() => {
-    setPreviewId(extractVideoId(input));
-  }, [input]);
+  const [loadingSearch, setLoadingSearch] = useState(false);
 
   useEffect(() => {
     if (!roomId) return;
@@ -36,57 +20,99 @@ export default function MobileControls({ roomId, clientId }) {
     return () => unsub();
   }, [roomId]);
 
-  const addToQueue = async () => {
-    if (!roomId) return;
-    const vid = extractVideoId(input);
-    if (!vid) return alert("Enter a valid YouTube URL or ID (11 chars).");
-    setAdding(true);
-    await push(ref(db, `rooms/${roomId}/queue`), vid);
+  const search = async (q) => {
+    if (!q) return;
+    setLoadingSearch(true);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const json = await res.json();
+      setResults(json.items || []);
+    } catch (e) {
+      console.error(e);
+      setResults([]);
+    } finally {
+      setLoadingSearch(false);
+    }
+  };
 
-    // If no currentSong, set it immediately
-    const curRef = ref(db, `rooms/${roomId}/currentSong`);
-    onValue(curRef, async (snap) => {
+  const handlePlayNow = async (videoId) => {
+    if (!roomId) return;
+    // set currentSong immediately
+    await set(ref(db, `rooms/${roomId}/currentSong`), videoId);
+    // also push to queue for record
+    await push(ref(db, `rooms/${roomId}/queue`), videoId);
+  };
+
+  const handleQueue = async (videoId) => {
+    if (!roomId) return;
+    await push(ref(db, `rooms/${roomId}/queue`), videoId);
+    // if no currentSong, set it
+    onValue(ref(db, `rooms/${roomId}/currentSong`), async (snap) => {
       if (!snap.exists()) {
-        await set(curRef, vid);
+        await set(ref(db, `rooms/${roomId}/currentSong`), videoId);
       }
     }, { onlyOnce: true });
-
-    setInput("");
-    setAdding(false);
   };
 
   return (
     <div className="min-h-screen p-6 bg-gradient-to-b from-indigo-900 via-purple-800 to-pink-700 text-white">
-      <div className="max-w-md mx-auto bg-white/5 p-6 rounded-xl shadow-xl">
-        <h2 className="text-2xl font-bold mb-4">Join Room: {roomId}</h2>
-        <p className="mb-4">Paste a YouTube link or ID to queue a song. You can queue multiple songs.</p>
+      <div className="max-w-md mx-auto bg-white/5 p-6 rounded-2xl shadow-xl">
+        <h2 className="text-2xl font-bold mb-3">Join Room: <span className="font-mono">{roomId}</span></h2>
 
-        <div className="space-y-3">
-          <input value={input} onChange={(e)=>setInput(e.target.value)} placeholder="YouTube URL or ID" className="w-full px-3 py-2 rounded-lg text-black" />
-          {previewId && (
-            <div className="flex items-center gap-3 bg-white/10 p-3 rounded">
-              <img src={`https://img.youtube.com/vi/${previewId}/mqdefault.jpg`} alt="thumb" className="w-28 h-16 rounded" />
-              <div>
-                <div className="font-semibold">Preview</div>
-                <div className="text-sm opacity-80">Video ID: {previewId}</div>
-              </div>
-            </div>
-          )}
-          <button onClick={addToQueue} disabled={adding} className="w-full bg-pink-500 hover:bg-pink-600 py-2 rounded-lg font-semibold">
-            {adding ? "Adding..." : "Add to Queue"}
-          </button>
+        <div className="mb-4">
+          <label className="block text-sm mb-2">Search Karaoke (YouTube)</label>
+          <div className="flex gap-2">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") search(query); }}
+              placeholder="Search song title or artist"
+              className="flex-1 px-3 py-2 rounded-lg text-black"
+            />
+            <button
+              onClick={() => search(query)}
+              className="bg-pink-500 hover:bg-pink-600 px-4 py-2 rounded-lg font-semibold"
+            >
+              {loadingSearch ? "Searching..." : "Search"}
+            </button>
+          </div>
         </div>
 
-        <div className="mt-6">
+        {results.length > 0 && (
+          <div className="mb-4">
+            <h3 className="font-semibold mb-2">Results</h3>
+            <ul className="space-y-3 max-h-64 overflow-auto">
+              {results.map((r) => (
+                <li key={r.videoId} className="flex items-center gap-3 bg-white/10 p-2 rounded">
+                  <img src={r.thumbnail} alt="" className="w-24 h-14 object-cover rounded" />
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{r.title}</div>
+                    <div className="text-xs opacity-80">{r.channelTitle}</div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => handlePlayNow(r.videoId)} className="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-xs">Play Now</button>
+                    <button onClick={() => handleQueue(r.videoId)} className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-xs">Queue</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="mt-4">
           <h3 className="font-semibold mb-2">Queued Songs</h3>
-          <ul className="space-y-2">
-            {queue.map((v, i) => (
-              <li key={i} className="flex items-center gap-3 bg-white/10 p-2 rounded">
-                <img src={`https://img.youtube.com/vi/${v}/mqdefault.jpg`} alt="thumb" className="w-20 h-12 rounded" />
-                <div className="text-sm">Video ID: {v}</div>
-              </li>
-            ))}
-          </ul>
+          {queue.length === 0 ? (
+            <div className="text-sm text-gray-200">No songs queued yet.</div>
+          ) : (
+            <ul className="space-y-2 max-h-48 overflow-auto">
+              {queue.map((v, i) => (
+                <li key={i} className="flex items-center gap-3 bg-white/10 p-2 rounded">
+                  <img src={`https://img.youtube.com/vi/${v}/mqdefault.jpg`} alt="" className="w-20 h-12 rounded" />
+                  <div className="text-sm">Video ID: {v}</div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
