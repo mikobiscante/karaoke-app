@@ -1,8 +1,17 @@
 // pages/room/[id].js
 import { useRouter } from "next/router";
 import { useEffect, useState, useRef } from "react";
-import { ref, onValue, push, set, remove, onDisconnect, get, child } from "firebase/database";
-import { db } from "../../firebase";
+import {
+  ref,
+  onValue,
+  push,
+  set,
+  remove,
+  onDisconnect,
+  get,
+  child,
+} from "firebase/database";
+import { db } from "../../utils/firebase";
 import YouTube from "react-youtube";
 import MobileControls from "../../components/MobileControls";
 import HostControls from "../../components/HostControls";
@@ -10,10 +19,9 @@ import { v4 as uuidv4 } from "uuid";
 
 import dynamic from "next/dynamic";
 
-// Dynamically import the named QR component on client only
 const QRCodeCanvas = dynamic(
   () => import("qrcode.react").then((mod) => mod.QRCodeCanvas),
-  { ssr: false }
+  { ssr: false },
 );
 
 export default function RoomPage() {
@@ -51,7 +59,7 @@ export default function RoomPage() {
     return () => {
       // explicit cleanup when component unmounts
       // remove this member immediately
-      remove(memberRef).catch(()=>{});
+      remove(memberRef).catch(() => {});
       unsubMembers();
       // if host left and no members, room will be removed by above listener
     };
@@ -132,8 +140,18 @@ export default function RoomPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Karaoke Room — {id}</h2>
             <div className="flex items-center gap-3">
-              <button onClick={handleSkip} className="bg-yellow-500 hover:bg-yellow-600 px-3 py-2 rounded">Skip</button>
-              <button onClick={handleExit} className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded">Exit Room (Clear)</button>
+              <button
+                onClick={handleSkip}
+                className="bg-yellow-500 hover:bg-yellow-600 px-3 py-2 rounded"
+              >
+                Skip
+              </button>
+              <button
+                onClick={handleExit}
+                className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded"
+              >
+                Exit Room (Clear)
+              </button>
             </div>
           </div>
 
@@ -141,7 +159,11 @@ export default function RoomPage() {
             {currentSong ? (
               <YouTube
                 videoId={currentSong}
-                opts={{ width: "100%", height: "520", playerVars: { autoplay: 1, controls: 1 } }}
+                opts={{
+                  width: "100%",
+                  height: "520",
+                  playerVars: { autoplay: 1, controls: 1 },
+                }}
                 onReady={(e) => (playerRef.current = e.target)}
                 onStateChange={async (e) => {
                   // 0 = ended
@@ -158,7 +180,8 @@ export default function RoomPage() {
                     const firstKey = keys[0];
                     const next = data[keys[1]] || null;
                     await remove(ref(db, `rooms/${id}/queue/${firstKey}`));
-                    if (next) await set(ref(db, `rooms/${id}/currentSong`), next);
+                    if (next)
+                      await set(ref(db, `rooms/${id}/currentSong`), next);
                     else await set(ref(db, `rooms/${id}/currentSong`), null);
                   }
                 }}
@@ -179,7 +202,18 @@ export default function RoomPage() {
             <div className="bg-white/10 p-4 rounded-lg w-64">
               <h3 className="font-semibold mb-2">Scan to Join</h3>
               <div className="flex items-center justify-center">
-                <QRCodeCanvas value={`${typeof window !== "undefined" ? window.location.origin : ""}/room/${id}?mobile=true`} size={140} bgColor="#ffffff" fgColor="#111827" />
+                <QRCodeCanvas
+                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/room/${id}?mobile=true`}
+                  size={140}
+                  bgColor="#ffffff"
+                  fgColor="#111827"
+                />
+                <QRCodeCanvas
+                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/room/${id}?mobile=true`}
+                  size={140}
+                  bgColor="#ffffff"
+                  fgColor="#111827"
+                />
               </div>
             </div>
           </div>
@@ -189,12 +223,18 @@ export default function RoomPage() {
         <aside className="bg-white text-black rounded-xl p-4 shadow-2xl">
           <h3 className="text-2xl font-bold mb-4">Queue</h3>
           {queue.length === 0 ? (
-            <p className="text-gray-600">No songs queued yet. Guests can scan the QR to add songs.</p>
+            <p className="text-gray-600">
+              No songs queued yet. Guests can scan the QR to add songs.
+            </p>
           ) : (
             <ul className="space-y-4">
               {queue.map((vid, i) => (
                 <li key={i} className="flex items-center gap-3">
-                  <img src={`https://img.youtube.com/vi/${vid}/mqdefault.jpg`} alt="thumb" className="w-20 h-12 object-cover rounded" />
+                  <img
+                    src={`https://img.youtube.com/vi/${vid}/mqdefault.jpg`}
+                    alt="thumb"
+                    className="w-20 h-12 object-cover rounded"
+                  />
                   <div className="flex-1">
                     <div className="font-medium">Song {i + 1}</div>
                     <div className="text-sm text-gray-600">Video ID: {vid}</div>

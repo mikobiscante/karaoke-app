@@ -1,7 +1,7 @@
 // components/MobileControls.js
 import { useEffect, useState } from "react";
 import { ref, push, set, onValue } from "firebase/database";
-import { db } from "../firebase";
+import { db } from "../utils/firebase";
 
 export default function MobileControls({ roomId, clientId }) {
   const [input, setInput] = useState("");

@@ -1,6 +1,6 @@
 // components/HostControls.js
 import { set, ref, remove } from "firebase/database";
-import { db } from "../firebase";
+import { db } from "../utils/firebase";
 
 export default function HostControls({ roomId }) {
   const exitRoom = async () => {
