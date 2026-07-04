@@ -17,8 +17,15 @@ const firebaseConfig = {
 let app;
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
+  console.log('NEXT_PUBLIC_FIREBASE_DATABASE_URL (server) 1:', process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL);
+
 } else {
   app = getApps()[0];
+  console.log('NEXT_PUBLIC_FIREBASE_DATABASE_URL (server) 2:', process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL);
+
 }
 
 export const db = getDatabase(app);
+
+console.log('NEXT_PUBLIC_FIREBASE_DATABASE_URL (server) 3:', process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL);
+
