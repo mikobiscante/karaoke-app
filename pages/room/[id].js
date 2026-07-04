@@ -4,10 +4,17 @@ import { useEffect, useState, useRef } from "react";
 import { ref, onValue, push, set, remove, onDisconnect, get, child } from "firebase/database";
 import { db } from "../../firebase";
 import YouTube from "react-youtube";
-import QRCode from "qrcode.react";
 import MobileControls from "../../components/MobileControls";
 import HostControls from "../../components/HostControls";
 import { v4 as uuidv4 } from "uuid";
+
+import dynamic from "next/dynamic";
+
+// Dynamically import the named QR component on client only
+const QRCodeCanvas = dynamic(
+  () => import("qrcode.react").then((mod) => mod.QRCodeCanvas),
+  { ssr: false }
+);
 
 export default function RoomPage() {
   const router = useRouter();
@@ -172,7 +179,7 @@ export default function RoomPage() {
             <div className="bg-white/10 p-4 rounded-lg w-64">
               <h3 className="font-semibold mb-2">Scan to Join</h3>
               <div className="flex items-center justify-center">
-                <QRCode value={`${typeof window !== "undefined" ? window.location.origin : ""}/room/${id}?mobile=true`} size={140} bgColor="#ffffff" fgColor="#111827" />
+                <QRCodeCanvas value={`${typeof window !== "undefined" ? window.location.origin : ""}/room/${id}?mobile=true`} size={140} bgColor="#ffffff" fgColor="#111827" />
               </div>
             </div>
           </div>
