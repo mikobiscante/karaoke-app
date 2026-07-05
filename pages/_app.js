@@ -1,6 +1,7 @@
 // pages/_app.js
 import "../style/globals.css";
 import Head from "next/head";
+import Script from "next/script";
 
 export default function MyApp({ Component, pageProps }) {
   return (
@@ -14,6 +15,14 @@ export default function MyApp({ Component, pageProps }) {
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>Karaoke SingGing</title>
       </Head>
+
+      {/* AdSense script loads after hydration */}
+      <Script
+        id="adsense"
+        strategy="afterInteractive"
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT || "ca-pub-8539359990744350"}`}
+        crossOrigin="anonymous"
+      />
 
       <Component {...pageProps} />
     </>
