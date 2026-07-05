@@ -1,6 +1,6 @@
 // components/MobileControls.js
 import React, { useEffect, useState } from "react";
-import { ref, push, set, onValue, remove } from "firebase/database";
+import { ref, push, set, onValue, remove, get } from "firebase/database";
 import { db } from "../utils/firebase";
 import { FaPlay, FaPause, FaStepForward, FaListUl, FaSearch } from "react-icons/fa";
 
@@ -20,8 +20,10 @@ export default function MobileControls({ roomId }) {
 
     const unsubQ = onValue(qRef, (snap) => {
       const data = snap.val() || {};
-      setQueue(Object.values(data));
+      const arr = Object.entries(data).map(([key, value]) => ({ key, ...value }));
+      setQueue(arr);
     });
+
     const unsubCur = onValue(curRef, (snap) => setCurrentSong(snap.val() || null));
     const unsubP = onValue(pRef, (snap) => setPlayState(snap.val() || "paused"));
 
@@ -34,6 +36,7 @@ export default function MobileControls({ roomId }) {
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       const json = await res.json();
+      // expected items: { videoId, title, thumbnail, channelTitle }
       setResults(json.items || []);
     } catch (e) {
       console.error(e);
@@ -43,16 +46,34 @@ export default function MobileControls({ roomId }) {
     }
   };
 
-  const handlePlayNow = async (videoId) => {
+  // add to queue as object with title and thumbnail
+  const handleQueue = async (item) => {
     if (!roomId) return;
-    await set(ref(db, `rooms/${roomId}/currentSong`), videoId);
-    await push(ref(db, `rooms/${roomId}/queue`), videoId);
-    await set(ref(db, `rooms/${roomId}/playState`), "playing");
+    // item: { videoId, title, thumbnail }
+    await push(ref(db, `rooms/${roomId}/queue`), {
+      videoId: item.videoId,
+      title: item.title,
+      thumbnail: item.thumbnail,
+      addedAt: Date.now()
+    });
   };
 
-  const handleQueue = async (videoId) => {
+  // play now: set currentSong and push to queue (so host history keeps it)
+  const handlePlayNow = async (item) => {
     if (!roomId) return;
-    await push(ref(db, `rooms/${roomId}/queue`), videoId);
+    await set(ref(db, `rooms/${roomId}/currentSong`), {
+      videoId: item.videoId,
+      title: item.title,
+      thumbnail: item.thumbnail
+    });
+    // also push to queue so it appears in history/queue ordering
+    await push(ref(db, `rooms/${roomId}/queue`), {
+      videoId: item.videoId,
+      title: item.title,
+      thumbnail: item.thumbnail,
+      addedAt: Date.now()
+    });
+    await set(ref(db, `rooms/${roomId}/playState`), "playing");
   };
 
   const handlePausePlay = async () => {
@@ -63,98 +84,125 @@ export default function MobileControls({ roomId }) {
 
   const handleSkip = async () => {
     if (!roomId) return;
+    // remove first queue item and set next as currentSong (same logic as host)
     const qRef = ref(db, `rooms/${roomId}/queue`);
-    const snap = await onValue(qRef);
+    const snap = await get(qRef);
     const data = snap.val() || {};
     const keys = Object.keys(data);
-    if (keys.length === 0) return;
+    if (keys.length === 0) {
+      await set(ref(db, `rooms/${roomId}/currentSong`), null);
+      await set(ref(db, `rooms/${roomId}/playState`), "paused");
+      return;
+    }
     const firstKey = keys[0];
     const next = data[keys[1]] || null;
     await remove(ref(db, `rooms/${roomId}/queue/${firstKey}`));
     await set(ref(db, `rooms/${roomId}/currentSong`), next || null);
+    // autoplay next if exists
+    if (next) await set(ref(db, `rooms/${roomId}/playState`), "playing");
   };
 
   return (
-    <div className="min-h-screen p-6 bg-gradient-to-b from-indigo-950 via-purple-900 to-pink-800 text-white">
-      <div className="max-w-md mx-auto bg-white/10 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/20">
-        <h2 className="text-2xl font-bold mb-4 text-center">🎤 Room <span className="font-mono">{roomId}</span></h2>
+    <div className="min-h-screen p-4 bg-gradient-to-b from-indigo-950 via-purple-900 to-pink-800 text-white">
+      <div className="max-w-md mx-auto bg-white/6 backdrop-blur p-4 rounded-2xl shadow-xl">
+        <h2 className="text-xl font-bold mb-3 text-center">Karaoke SingGing</h2>
 
-        {/* Search Panel */}
-        <div className="mb-6 bg-black/30 p-4 rounded-xl shadow-inner">
+        {/* Search */}
+        <div className="mb-4">
           <div className="flex gap-2">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") search(query); }}
-              placeholder="Search karaoke song..."
+              placeholder="Search YouTube karaoke..."
               className="flex-1 px-3 py-2 rounded-lg text-black"
             />
             <button
               onClick={() => search(query)}
-              className="bg-pink-500 hover:bg-pink-600 px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
+              className="bg-pink-500 hover:bg-pink-400 px-4 py-2 rounded-lg flex items-center gap-2 transition"
             >
-              <FaSearch /> {loadingSearch ? "Searching..." : "Search"}
+              <FaSearch /> {loadingSearch ? "..." : "Search"}
             </button>
           </div>
         </div>
 
         {/* Results */}
         {results.length > 0 && (
-          <div className="mb-6 bg-white/5 p-4 rounded-xl shadow-inner">
-            <h3 className="font-semibold mb-2">Results</h3>
-            <ul className="space-y-3 max-h-64 overflow-auto">
-              {results.map((r) => (
-                <li key={r.videoId} className="flex items-center gap-3 bg-white/10 p-2 rounded-lg">
-                  <img src={r.thumbnail} alt="" className="w-24 h-14 object-cover rounded" />
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{r.title}</div>
-                    <div className="text-xs opacity-80">{r.channelTitle}</div>
-                  </div>
-                  {currentSong ? (
-                    <button onClick={() => handleQueue(r.videoId)} className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-xs flex items-center gap-1">
-                      <FaListUl /> Queue
-                    </button>
-                  ) : (
-                    <button onClick={() => handlePlayNow(r.videoId)} className="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-xs flex items-center gap-1">
-                      <FaPlay /> Play
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
+          <div className="mb-4 bg-white/5 p-3 rounded-lg max-h-64 overflow-auto">
+            {results.map((r) => (
+              <div key={r.videoId} className="flex items-center gap-3 p-2 rounded hover:bg-white/8 transition">
+                <img src={r.thumbnail} alt="" className="w-20 h-12 rounded object-cover" />
+                <div className="flex-1">
+                  <div className="font-medium text-sm line-clamp-2">{r.title}</div>
+                  <div className="text-xs opacity-80">{r.channelTitle}</div>
+                </div>
+
+                {/* If no currentSong -> Play button, else Queue button */}
+                {currentSong ? (
+                  <button
+                    onClick={() => handleQueue({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
+                    className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-xs flex items-center gap-1"
+                  >
+                    <FaListUl /> Queue
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handlePlayNow({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
+                    className="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-xs flex items-center gap-1"
+                  >
+                    <FaPlay /> Play
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
         {/* Current Song Controls */}
-        {currentSong && (
-          <div className="bg-black/40 p-4 rounded-xl shadow-lg flex flex-col items-center gap-4">
-            <img src={`https://img.youtube.com/vi/${currentSong}/mqdefault.jpg`} alt="" className="w-64 h-36 rounded-lg shadow-md" />
-            <div className="flex gap-4">
-              <button onClick={handlePausePlay} className="bg-yellow-500 hover:bg-yellow-600 p-3 rounded-full text-xl shadow-lg">
-                {playState === "playing" ? <FaPause /> : <FaPlay />}
-              </button>
-              <button onClick={handleSkip} className="bg-indigo-600 hover:bg-indigo-700 p-3 rounded-full text-xl shadow-lg">
-                <FaStepForward />
-              </button>
+        <div className="mb-4 bg-white/5 p-3 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="text-sm text-gray-200">Now Playing</div>
+              <div className="font-medium">{currentSong ? currentSong.title : "No song playing"}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              {currentSong && (
+                <>
+                  <button
+                    onClick={handlePausePlay}
+                    className="bg-yellow-500 hover:bg-yellow-600 p-3 rounded-full text-black"
+                    aria-label="Pause/Play"
+                  >
+                    {playState === "playing" ? <FaPause /> : <FaPlay />}
+                  </button>
+                  <button
+                    onClick={handleSkip}
+                    className="bg-indigo-600 hover:bg-indigo-700 p-3 rounded-full text-white"
+                    aria-label="Skip"
+                  >
+                    <FaStepForward />
+                  </button>
+                </>
+              )}
             </div>
           </div>
-        )}
 
-        {/* Queue Panel */}
-        <div className="mt-6 bg-white/5 p-4 rounded-xl shadow-inner">
-          <h3 className="font-semibold mb-2">Queued Songs</h3>
-          {queue.length === 0 ? (
-            <div className="text-sm text-gray-200">No songs queued yet.</div>
-          ) : (
-            <ul className="space-y-2 max-h-48 overflow-auto">
-              {queue.map((v, i) => (
-                <li key={i} className="flex items-center gap-3 bg-white/10 p-2 rounded">
-                  <img src={`https://img.youtube.com/vi/${v}/mqdefault.jpg`} alt="" className="w-20 h-12 rounded" />
-                  <div className="text-sm">Video ID: {v}</div>
-                </li>
-              ))}
-            </ul>
-          )}
+          {/* Queue list */}
+          <div>
+            <div className="text-sm text-gray-300 mb-2">Queue</div>
+            {queue.length === 0 ? (
+              <div className="text-xs text-gray-400">No songs queued yet.</div>
+            ) : (
+              <ul className="space-y-2 max-h-40 overflow-auto">
+                {queue.map((v, i) => (
+                  <li key={v.key} className="flex items-center gap-3 bg-white/6 p-2 rounded">
+                    <img src={v.thumbnail} alt="" className="w-16 h-10 rounded object-cover" />
+                    <div className="flex-1 text-sm line-clamp-2">{v.title}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </div>
