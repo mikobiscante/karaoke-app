@@ -7,9 +7,17 @@ import { db } from "../../utils/firebase";
 import YouTube from "react-youtube";
 import { FaPlay, FaPause, FaStepForward, FaListUl } from "react-icons/fa";
 
-const MobileControls = dynamic(() => import("../../components/MobileControls"), { ssr: false });
-const HostControls = dynamic(() => import("../../components/HostControls"), { ssr: false });
-const QRCodeCanvas = dynamic(() => import("qrcode.react").then(m => m.QRCodeCanvas), { ssr: false });
+const MobileControls = dynamic(
+  () => import("../../components/MobileControls"),
+  { ssr: false },
+);
+const HostControls = dynamic(() => import("../../components/HostControls"), {
+  ssr: false,
+});
+const QRCodeCanvas = dynamic(
+  () => import("qrcode.react").then((m) => m.QRCodeCanvas),
+  { ssr: false },
+);
 
 export default function RoomPage() {
   const router = useRouter();
@@ -35,17 +43,28 @@ export default function RoomPage() {
     const qRef = ref(db, `rooms/${id}/queue`);
     const pRef = ref(db, `rooms/${id}/playState`);
 
-    const unsubCur = onValue(curRef, (snap) => setCurrentSong(snap.val() || null));
+    const unsubCur = onValue(curRef, (snap) =>
+      setCurrentSong(snap.val() || null),
+    );
     const unsubQ = onValue(qRef, (snap) => {
       const data = snap.val() || {};
-      const arr = Object.entries(data).map(([key, value]) => ({ key, ...value }));
+      const arr = Object.entries(data).map(([key, value]) => ({
+        key,
+        ...value,
+      }));
       // sort by addedAt ascending (older first)
       arr.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
       setQueue(arr);
     });
-    const unsubP = onValue(pRef, (snap) => setPlayState(snap.val() || "paused"));
+    const unsubP = onValue(pRef, (snap) =>
+      setPlayState(snap.val() || "paused"),
+    );
 
-    return () => { unsubCur(); unsubQ(); unsubP(); };
+    return () => {
+      unsubCur();
+      unsubQ();
+      unsubP();
+    };
   }, [id]);
 
   // Ensure player follows playState
@@ -61,75 +80,102 @@ export default function RoomPage() {
   useEffect(() => {
     if (!playerRef.current) return;
     if (!currentSong) {
-      try { playerRef.current.stopVideo?.(); } catch {}
+      try {
+        playerRef.current.stopVideo?.();
+      } catch {}
       return;
     }
     try {
       playerRef.current.loadVideoById(currentSong.videoId);
       // small delay then try to play (helps with some autoplay policies)
       setTimeout(() => {
-        try { playerRef.current.playVideo?.(); } catch {}
+        try {
+          playerRef.current.playVideo?.();
+        } catch {}
       }, 250);
     } catch {}
   }, [currentSong]);
 
   // Helper: get ordered entries from snapshot object (by addedAt)
   const orderedEntries = (dataObj) => {
-    const arr = Object.entries(dataObj || {}).map(([key, value]) => ({ key, ...value }));
+    const arr = Object.entries(dataObj || {}).map(([key, value]) => ({
+      key,
+      ...value,
+    }));
     arr.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
     return arr;
   };
 
-  // Advance queue: remove first (oldest) and set next as currentSong, ensure autoplay on host player
-const advanceQueue = async () => {
-  if (!id) return;
-  const qRef = ref(db, `rooms/${id}/queue`);
-  const snap = await get(qRef);
-  const data = snap.val() || {};
-  // order by addedAt ascending
-  const ordered = Object.entries(data || {}).map(([key, value]) => ({ key, ...value }))
-    .sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
-
-  if (ordered.length === 0) {
-    await set(ref(db, `rooms/${id}/currentSong`), null);
-    await set(ref(db, `rooms/${id}/playState`), "paused");
-    return;
-  }
-
-  const firstKey = ordered[0].key;
-  const next = ordered[1] || null;
-
-  // remove the finished (first) entry
-  await remove(ref(db, `rooms/${id}/queue/${firstKey}`));
-
-  if (next) {
-    // set next as currentSong and request autoplay
-    await set(ref(db, `rooms/${id}/currentSong`), {
-      videoId: next.videoId,
-      title: next.title,
-      thumbnail: next.thumbnail
-    });
-    await set(ref(db, `rooms/${id}/playState`), "playing");
-
-    // small delay to let Firebase propagate, then force host player to load & play
-    setTimeout(() => {
+  // Force host player to load & play whenever currentSong changes in Firebase
+  useEffect(() => {
+    if (!playerRef.current) return;
+    if (!currentSong || !currentSong.videoId) return;
+    // small delay to allow YouTube API to be ready
+    const t = setTimeout(() => {
       try {
-        if (playerRef.current && next.videoId) {
-          playerRef.current.loadVideoById(next.videoId);
-          // try to play; browsers may block autoplay without a user gesture
-          playerRef.current.playVideo?.();
-        }
+        playerRef.current.loadVideoById(currentSong.videoId);
+        // try to play; browsers may block autoplay without a user gesture
+        playerRef.current.playVideo?.();
       } catch (err) {
-        console.warn("Could not auto-play next video on host player:", err);
+        console.warn("Force play on currentSong change failed:", err);
       }
     }, 300);
-  } else {
-    // no next
-    await set(ref(db, `rooms/${id}/currentSong`), null);
-    await set(ref(db, `rooms/${id}/playState`), "paused");
-  }
-};
+    return () => clearTimeout(t);
+  }, [currentSong]);
 
+  // Advance queue: remove first (oldest) and set next as currentSong, ensure autoplay on host player
+  const advanceQueue = async () => {
+    if (!id) return;
+    const qRef = ref(db, `rooms/${id}/queue`);
+    const snap = await get(qRef);
+    const data = snap.val() || {};
+    // order by addedAt ascending
+    const ordered = Object.entries(data || {})
+      .map(([key, value]) => ({ key, ...value }))
+      .sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+
+    if (ordered.length === 0) {
+      await set(ref(db, `rooms/${id}/currentSong`), null);
+      await set(ref(db, `rooms/${id}/playState`), "paused");
+      return;
+    }
+
+    const firstKey = ordered[0].key;
+    const next = ordered[1] || null;
+
+    // remove the finished (first) entry
+    await remove(ref(db, `rooms/${id}/queue/${firstKey}`));
+
+    if (next) {
+      // set next as currentSong and request autoplay
+      await set(ref(db, `rooms/${id}/currentSong`), {
+        videoId: next.videoId,
+        title: next.title,
+        thumbnail: next.thumbnail,
+      });
+      await set(ref(db, `rooms/${id}/playState`), "playing");
+
+      // small delay to let Firebase propagate, then force host player to load & play
+      setTimeout(async () => {
+        try {
+          // try to read currentSong from DB to be safe
+          const csSnap = await get(ref(db, `rooms/${id}/currentSong`));
+          const cs = csSnap.val();
+          const vid = cs?.videoId || next.videoId;
+          if (playerRef.current && vid) {
+            playerRef.current.loadVideoById(vid);
+            playerRef.current.playVideo?.();
+          }
+        } catch (err) {
+          console.warn("Could not auto-play next video on host player:", err);
+        }
+      }, 350);
+    } else {
+      // no next
+      await set(ref(db, `rooms/${id}/currentSong`), null);
+      await set(ref(db, `rooms/${id}/playState`), "paused");
+    }
+  };
 
   // YouTube state change handler
   const onPlayerStateChange = async (e) => {
@@ -142,82 +188,64 @@ const advanceQueue = async () => {
     }
   };
 
-  // start scoring animation + confetti + advance after count-up + pause
-const startScoreSequence = (score) => {
-  // clear any existing animations/timeouts
-  if (scoreAnimRef.current) cancelAnimationFrame(scoreAnimRef.current);
-  if (scoringTimeoutRef.current) clearTimeout(scoringTimeoutRef.current);
-  setDisplayScore(0);
-  setShowScore(true);
-  launchConfetti();
-
-  const countDuration = 3000; // 3s count-up
-  const pauseAfter = 2000; // 2s appreciation pause
-  const start = performance.now();
-  const from = 0;
-  const to = score;
-
-  // animate numeric count-up with easeOutCubic
-  const step = (now) => {
-    const t = Math.min(1, (now - start) / countDuration);
-    const eased = 1 - Math.pow(1 - t, 3);
-    const current = Math.floor(from + (to - from) * eased);
-    setDisplayScore(current);
-    if (t < 1) {
-      scoreAnimRef.current = requestAnimationFrame(step);
-    } else {
-      scoreAnimRef.current = null;
-    }
-  };
-  scoreAnimRef.current = requestAnimationFrame(step);
-
-  // After countDuration + pauseAfter, stop confetti, hide score, then advance & autoplay next
-  scoringTimeoutRef.current = setTimeout(async () => {
-    // cleanup visuals
-    stopConfetti();
-    setShowScore(false);
+  // start scoring animation + confetti + advance after count-up + 2s pause
+  const startScoreSequence = (score) => {
+    // clear any existing animations/timeouts
+    if (scoreAnimRef.current) cancelAnimationFrame(scoreAnimRef.current);
+    if (scoringTimeoutRef.current) clearTimeout(scoringTimeoutRef.current);
     setDisplayScore(0);
-    scoringTimeoutRef.current = null;
+    setShowScore(true);
+    launchConfetti();
 
-    // Advance queue and ensure autoplay on host player
-    try {
-      await advanceQueue();
-      // After advanceQueue sets currentSong and playState, attempt to force play again
-      // small safety delay to allow Firebase propagation
-      setTimeout(() => {
-        try {
-          // read currentSong from local state (it will update via onValue), but force play if player exists
-          if (playerRef.current) {
-            // if currentSong exists in state, use it; otherwise try to fetch from DB
-            const nextId = (currentSong && currentSong.videoId) ? currentSong.videoId : null;
-            // If nextId is null, try to fetch the currentSong from DB to play
-            if (!nextId) {
-              get(ref(db, `rooms/${id}/currentSong`)).then((snap) => {
-                const cs = snap.val();
-                if (cs && cs.videoId) {
-                  try {
-                    playerRef.current.loadVideoById(cs.videoId);
-                    playerRef.current.playVideo?.();
-                  } catch (err) { /* ignore */ }
-                }
-              }).catch(() => {});
-            } else {
-              try {
-                playerRef.current.loadVideoById(nextId);
-                playerRef.current.playVideo?.();
-              } catch (err) { /* ignore */ }
+    const countDuration = 3000; // 3s count-up
+    const pauseAfter = 2000; // 2s appreciation pause
+    const start = performance.now();
+    const from = 0;
+    const to = score;
+
+    // animate numeric count-up with easeOutCubic
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / countDuration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const current = Math.floor(from + (to - from) * eased);
+      setDisplayScore(current);
+      if (t < 1) {
+        scoreAnimRef.current = requestAnimationFrame(step);
+      } else {
+        scoreAnimRef.current = null;
+      }
+    };
+    scoreAnimRef.current = requestAnimationFrame(step);
+
+    // After countDuration + pauseAfter, stop confetti, hide score, then advance & autoplay next
+    scoringTimeoutRef.current = setTimeout(async () => {
+      stopConfetti();
+      setShowScore(false);
+      setDisplayScore(0);
+      scoringTimeoutRef.current = null;
+
+      // Advance queue and ensure autoplay on host player
+      try {
+        await advanceQueue();
+        // After advanceQueue sets currentSong and playState, attempt to force play again
+        setTimeout(async () => {
+          try {
+            // fetch currentSong from DB to ensure we have the latest
+            const csSnap = await get(ref(db, `rooms/${id}/currentSong`));
+            const cs = csSnap.val();
+            if (cs && cs.videoId && playerRef.current) {
+              playerRef.current.loadVideoById(cs.videoId);
+              playerRef.current.playVideo?.();
             }
+          } catch (err) {
+            console.warn("Error forcing play after advance:", err);
           }
-        } catch (err) {
-          console.warn("Error forcing play after advance:", err);
-        }
-      }, 350);
-    } catch (err) {
-      console.error("advanceQueue failed:", err);
-    }
-  }, countDuration + pauseAfter);
-};
-
+        }, 350);
+      } catch (err) {
+        console.error("advanceQueue failed:", err);
+      }
+    }, countDuration + pauseAfter);
+  };
 
   // Confetti helpers (DOM-based)
   const launchConfetti = () => {
@@ -238,16 +266,24 @@ const startScoreSequence = (score) => {
       const dx = (Math.random() - 0.5) * 600;
       const dy = 400 + Math.random() * 300;
       const rot = (Math.random() - 0.5) * 720;
-      el.animate([
-        { transform: `translateY(0px) rotate(0deg)`, opacity: 1 },
-        { transform: `translate(${dx}px, ${dy}px) rotate(${rot}deg)`, opacity: 0.1 }
-      ], {
-        duration: 2200 + Math.random() * 800,
-        easing: "cubic-bezier(.2,.8,.2,1)",
-        fill: "forwards"
-      });
+      el.animate(
+        [
+          { transform: `translateY(0px) rotate(0deg)`, opacity: 1 },
+          {
+            transform: `translate(${dx}px, ${dy}px) rotate(${rot}deg)`,
+            opacity: 0.1,
+          },
+        ],
+        {
+          duration: 2200 + Math.random() * 800,
+          easing: "cubic-bezier(.2,.8,.2,1)",
+          fill: "forwards",
+        },
+      );
     }
-    setTimeout(() => { if (container) container.innerHTML = ""; }, 3200);
+    setTimeout(() => {
+      if (container) container.innerHTML = "";
+    }, 3200);
   };
 
   const stopConfetti = () => {
@@ -277,10 +313,16 @@ const startScoreSequence = (score) => {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-800 text-white">
       <header className="flex items-center justify-between px-6 py-4 bg-black/30 backdrop-blur">
         <div className="flex items-center gap-3">
-          <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-10" />
+          <img
+            src="/logo-singging.png"
+            alt="Karaoke SingGing"
+            className="h-10"
+          />
           <div>
             <div className="text-lg font-bold">Karaoke SingGing</div>
-            <div className="text-xs text-gray-300">ROOM — <span className="font-mono">{id}</span></div>
+            <div className="text-xs text-gray-300">
+              ROOM — <span className="font-mono">{id}</span>
+            </div>
           </div>
         </div>
         <HostControls roomId={id} onExitRedirect={() => router.push("/")} />
@@ -296,12 +338,19 @@ const startScoreSequence = (score) => {
                 opts={{
                   width: "100%",
                   height: "100%",
-                  playerVars: { autoplay: 0, controls: 1, modestbranding: 1, rel: 0 }
+                  playerVars: {
+                    autoplay: 0,
+                    controls: 1,
+                    modestbranding: 1,
+                    rel: 0,
+                  },
                 }}
                 onReady={(e) => {
                   playerRef.current = e.target;
                   if (playState === "playing") {
-                    try { e.target.playVideo?.(); } catch {}
+                    try {
+                      e.target.playVideo?.();
+                    } catch {}
                   }
                 }}
                 onStateChange={onPlayerStateChange}
@@ -310,8 +359,12 @@ const startScoreSequence = (score) => {
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-3xl font-bold mb-2">Waiting for a song to be queued...</div>
-                  <div className="text-sm opacity-80">Guests can scan the QR code to add songs.</div>
+                  <div className="text-3xl font-bold mb-2">
+                    Waiting for a song to be queued...
+                  </div>
+                  <div className="text-sm opacity-80">
+                    Guests can scan the QR code to add songs.
+                  </div>
                 </div>
               </div>
             )}
@@ -324,7 +377,11 @@ const startScoreSequence = (score) => {
               className="overlay-control bg-white text-black p-3 rounded-full shadow-lg"
               aria-label="Play/Pause"
             >
-              {playState === "playing" ? <FaPause size={18} /> : <FaPlay size={18} />}
+              {playState === "playing" ? (
+                <FaPause size={18} />
+              ) : (
+                <FaPlay size={18} />
+              )}
             </button>
 
             <button
@@ -336,7 +393,11 @@ const startScoreSequence = (score) => {
             </button>
 
             <div className="ml-2 text-sm text-gray-200">
-              {currentSong ? <div className="font-medium">{currentSong.title}</div> : <div>No song playing</div>}
+              {currentSong ? (
+                <div className="font-medium">{currentSong.title}</div>
+              ) : (
+                <div>No song playing</div>
+              )}
             </div>
           </div>
 
@@ -348,10 +409,15 @@ const startScoreSequence = (score) => {
                 <div className="text-xl font-semibold">Performance Score</div>
                 <div className="score-number">{displayScore}</div>
                 <div className="mt-2 text-sm text-gray-600">
-                  {displayScore >= 98 ? "Legendary performance!" :
-                   displayScore >= 94 ? "Amazing! Crowd loved it!" :
-                   displayScore >= 90 ? "Fantastic singing!" :
-                   displayScore >= 86 ? "Great job!" : "Nice effort!"}
+                  {displayScore >= 98
+                    ? "Legendary performance!"
+                    : displayScore >= 94
+                      ? "Amazing! Crowd loved it!"
+                      : displayScore >= 90
+                        ? "Fantastic singing!"
+                        : displayScore >= 86
+                          ? "Great job!"
+                          : "Nice effort!"}
                 </div>
               </div>
             </div>
@@ -367,10 +433,19 @@ const startScoreSequence = (score) => {
             ) : (
               <ul className="space-y-3 max-h-[60vh] overflow-auto">
                 {queue.map((item) => (
-                  <li key={item.key} className="flex items-center gap-3 bg-white/6 p-2 rounded-lg">
-                    <img src={item.thumbnail} alt="thumb" className="w-20 h-12 rounded object-cover" />
+                  <li
+                    key={item.key}
+                    className="flex items-center gap-3 bg-white/6 p-2 rounded-lg"
+                  >
+                    <img
+                      src={item.thumbnail}
+                      alt="thumb"
+                      className="w-20 h-12 rounded object-cover"
+                    />
                     <div className="flex-1">
-                      <div className="font-medium text-sm line-clamp-2">{item.title}</div>
+                      <div className="font-medium text-sm line-clamp-2">
+                        {item.title}
+                      </div>
                       <div className="text-xs opacity-80">Queued by guest</div>
                     </div>
                   </li>
@@ -381,7 +456,9 @@ const startScoreSequence = (score) => {
 
           <div className="mt-6 bg-white/6 p-4 rounded-xl text-center">
             <h4 className="font-semibold mb-2">Welcome to Karaoke SingGing</h4>
-            <p className="text-sm text-gray-300 mb-3">Guests can add songs and send reactions from their phones.</p>
+            <p className="text-sm text-gray-300 mb-3">
+              Guests can add songs and send reactions from their phones.
+            </p>
             <div className="flex items-center justify-center">
               <QRCodeClient roomId={id} />
             </div>
@@ -397,7 +474,12 @@ function QRCodeClient({ roomId }) {
   const url = `${window.location.origin}/room/${roomId}?mobile=true`;
   return (
     <div className="flex flex-col items-center gap-2">
-      <QRCodeCanvas value={url} size={120} bgColor="#ffffff" fgColor="#111827" />
+      <QRCodeCanvas
+        value={url}
+        size={120}
+        bgColor="#ffffff"
+        fgColor="#111827"
+      />
       <div className="text-xs text-gray-300">Scan to join on mobile</div>
     </div>
   );
