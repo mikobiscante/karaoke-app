@@ -9,7 +9,7 @@
   #__next {
     height: 100%;
   }
-
+  
   body {
     background-color: #111827; /* Tailwind bg-gray-900 hex */
     color: #ffffff;
@@ -22,5 +22,10 @@
       Arial,
       sans-serif;
     margin: 0;
+  }
+
+  .yt-player-full {
+    width: 100% !important;
+    height: 100% !important;
   }
 }
