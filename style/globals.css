@@ -2,15 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Put global base rules inside the base layer so @apply works */
+/* Use explicit CSS for body background and color to avoid @apply issues */
 @layer base {
   html, body, #__next {
     height: 100%;
   }
 
   body {
-    @apply bg-gray-900 text-white;
-    /* optional: smoother font stack */
-    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #111827; /* Tailwind bg-gray-900 hex */
+    color: #ffffff;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    margin: 0;
   }
 }
