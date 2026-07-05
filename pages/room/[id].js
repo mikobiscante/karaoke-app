@@ -16,33 +16,30 @@ export default function RoomPage() {
   const { id } = router.query;
   const isMobile = router.query.mobile === "true";
 
-  const [currentSong, setCurrentSong] = useState(null); // { videoId, title, thumbnail } or null
-  const [queue, setQueue] = useState([]); // array of { key, videoId, title, thumbnail }
+  const [currentSong, setCurrentSong] = useState(null); // { videoId, title, thumbnail }
+  const [queue, setQueue] = useState([]); // [{ key, videoId, title, thumbnail }]
   const [playState, setPlayState] = useState("paused");
   const [showScore, setShowScore] = useState(false);
-  const [lastScore, setLastScore] = useState(null);
+  const [displayScore, setDisplayScore] = useState(0);
+  const [finalScore, setFinalScore] = useState(0);
   const playerRef = useRef(null);
+  const scoreAnimRef = useRef(null);
   const scoringTimeoutRef = useRef(null);
+  const confettiRef = useRef(null);
 
-  // subscribe to firebase nodes
+  // subscribe to firebase
   useEffect(() => {
     if (!id) return;
     const curRef = ref(db, `rooms/${id}/currentSong`);
     const qRef = ref(db, `rooms/${id}/queue`);
     const pRef = ref(db, `rooms/${id}/playState`);
 
-    const unsubCur = onValue(curRef, (snap) => {
-      const val = snap.val();
-      setCurrentSong(val || null);
-    });
-
+    const unsubCur = onValue(curRef, (snap) => setCurrentSong(snap.val() || null));
     const unsubQ = onValue(qRef, (snap) => {
       const data = snap.val() || {};
-      // convert to array with keys so we can remove by key
       const arr = Object.entries(data).map(([key, value]) => ({ key, ...value }));
       setQueue(arr);
     });
-
     const unsubP = onValue(pRef, (snap) => setPlayState(snap.val() || "paused"));
 
     return () => { unsubCur(); unsubQ(); unsubP(); };
@@ -57,7 +54,7 @@ export default function RoomPage() {
     } catch {}
   }, [playState]);
 
-  // load new video when currentSong changes
+  // load new video when currentSong changes and autoplay
   useEffect(() => {
     if (!playerRef.current) return;
     if (!currentSong) {
@@ -65,13 +62,15 @@ export default function RoomPage() {
       return;
     }
     try {
-      // load by id and autoplay if playState says playing
       playerRef.current.loadVideoById(currentSong.videoId);
-      if (playState === "playing") playerRef.current.playVideo?.();
+      // attempt autoplay
+      setTimeout(() => {
+        try { playerRef.current.playVideo?.(); } catch {}
+      }, 250);
     } catch {}
   }, [currentSong]);
 
-  // helper: advance queue (remove first item) and set next as currentSong
+  // advance queue helper (removes first and sets next)
   const advanceQueue = async () => {
     if (!id) return;
     const qRef = ref(db, `rooms/${id}/queue`);
@@ -83,44 +82,107 @@ export default function RoomPage() {
       await set(ref(db, `rooms/${id}/playState`), "paused");
       return;
     }
-    // remove first (oldest) entry
     const firstKey = keys[0];
     const nextKey = keys[1] || null;
-    // remove the first
     await remove(ref(db, `rooms/${id}/queue/${firstKey}`));
-    // set next as currentSong (if exists)
     if (nextKey) {
       const next = data[nextKey];
       await set(ref(db, `rooms/${id}/currentSong`), next);
-      // ensure autoplay
       await set(ref(db, `rooms/${id}/playState`), "playing");
     } else {
-      // no next
       await set(ref(db, `rooms/${id}/currentSong`), null);
       await set(ref(db, `rooms/${id}/playState`), "paused");
     }
   };
 
-  // when player state changes (YouTube events)
+  // YouTube state change handler
   const onPlayerStateChange = async (e) => {
     // 0 = ended
     if (e.data === 0 && id) {
-      // show scoring popover for 3s, then advance and autoplay
-      // generate a score (placeholder logic) — replace with your scoring algorithm
-      const score = Math.floor(60 + Math.random() * 40); // 60-99
-      setLastScore(score);
-      setShowScore(true);
-
-      // clear any existing timeout
-      if (scoringTimeoutRef.current) clearTimeout(scoringTimeoutRef.current);
-
-      scoringTimeoutRef.current = setTimeout(async () => {
-        setShowScore(false);
-        scoringTimeoutRef.current = null;
-        // after scoring popover closes, advance queue and autoplay next
-        await advanceQueue();
-      }, 3000); // 3 seconds
+      // compute final score between 80 and 100
+      const score = 80 + Math.floor(Math.random() * 21); // 80..100
+      setFinalScore(score);
+      // show scoring popover and animate count up for 3s, then advance
+      startScoreSequence(score);
     }
+  };
+
+  // start scoring animation + confetti + advance after 3s
+  const startScoreSequence = (score) => {
+    // clear any existing
+    if (scoreAnimRef.current) cancelAnimationFrame(scoreAnimRef.current);
+    if (scoringTimeoutRef.current) clearTimeout(scoringTimeoutRef.current);
+    setDisplayScore(0);
+    setShowScore(true);
+    launchConfetti();
+
+    const duration = 3000; // 3 seconds
+    const start = performance.now();
+    const from = 0;
+    const to = score;
+
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      // easeOutCubic for drama
+      const eased = 1 - Math.pow(1 - t, 3);
+      const current = Math.floor(from + (to - from) * eased);
+      setDisplayScore(current);
+      if (t < 1) {
+        scoreAnimRef.current = requestAnimationFrame(step);
+      } else {
+        scoreAnimRef.current = null;
+      }
+    };
+    scoreAnimRef.current = requestAnimationFrame(step);
+
+    scoringTimeoutRef.current = setTimeout(async () => {
+      // stop confetti
+      stopConfetti();
+      setShowScore(false);
+      setDisplayScore(0);
+      scoringTimeoutRef.current = null;
+      // advance and autoplay next
+      await advanceQueue();
+    }, duration);
+  };
+
+  // confetti helpers (DOM-based)
+  const launchConfetti = () => {
+    const container = confettiRef.current;
+    if (!container) return;
+    // clear existing
+    container.innerHTML = "";
+    const colors = ["#ff4da6", "#7c3aed", "#06b6d4", "#f97316", "#fde047"];
+    const pieces = 40;
+    for (let i = 0; i < pieces; i++) {
+      const el = document.createElement("div");
+      el.className = "confetti";
+      el.style.background = colors[i % colors.length];
+      el.style.left = `${50 + (Math.random() - 0.5) * 60}%`;
+      el.style.top = `${10 + Math.random() * 20}%`;
+      el.style.transform = `rotate(${Math.random() * 360}deg)`;
+      el.style.opacity = `${0.9 + Math.random() * 0.1}`;
+      container.appendChild(el);
+      // animate each piece
+      const dx = (Math.random() - 0.5) * 600;
+      const dy = 400 + Math.random() * 300;
+      const rot = (Math.random() - 0.5) * 720;
+      el.animate([
+        { transform: `translateY(0px) rotate(0deg)`, opacity: 1 },
+        { transform: `translate(${dx}px, ${dy}px) rotate(${rot}deg)`, opacity: 0.1 }
+      ], {
+        duration: 2200 + Math.random() * 800,
+        easing: "cubic-bezier(.2,.8,.2,1)",
+        fill: "forwards"
+      });
+    }
+    // remove after 3s
+    setTimeout(() => { if (container) container.innerHTML = ""; }, 3200);
+  };
+
+  const stopConfetti = () => {
+    const container = confettiRef.current;
+    if (container) container.innerHTML = "";
   };
 
   // host actions
@@ -132,16 +194,10 @@ export default function RoomPage() {
 
   const skip = async () => {
     if (!id) return;
-    // immediate skip: show scoring briefly then advance
-    const score = Math.floor(60 + Math.random() * 40);
-    setLastScore(score);
-    setShowScore(true);
-    if (scoringTimeoutRef.current) clearTimeout(scoringTimeoutRef.current);
-    scoringTimeoutRef.current = setTimeout(async () => {
-      setShowScore(false);
-      scoringTimeoutRef.current = null;
-      await advanceQueue();
-    }, 3000);
+    // show scoring briefly then advance (same as end-of-song)
+    const score = 80 + Math.floor(Math.random() * 21);
+    setFinalScore(score);
+    startScoreSequence(score);
   };
 
   if (!id) return null;
@@ -151,7 +207,7 @@ export default function RoomPage() {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-800 text-white">
       <header className="flex items-center justify-between px-6 py-4 bg-black/30 backdrop-blur">
         <div className="flex items-center gap-3">
-          {/* <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-10" /> */}
+          <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-10" />
           <div>
             <div className="text-lg font-bold">Karaoke SingGing</div>
             <div className="text-xs text-gray-300">ROOM — <span className="font-mono">{id}</span></div>
@@ -161,8 +217,8 @@ export default function RoomPage() {
       </header>
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
-        {/* Big video column */}
-        <section className="lg:col-span-9 col-span-1 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[calc(100vh-120px)] relative">
+        {/* Video column */}
+        <section className="lg:col-span-9 col-span-1 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[calc(100vh-140px)] relative">
           <div className="yt-wrapper flex-1">
             {currentSong ? (
               <YouTube
@@ -174,7 +230,7 @@ export default function RoomPage() {
                 }}
                 onReady={(e) => {
                   playerRef.current = e.target;
-                  // ensure autoplay if playState says playing
+                  // autoplay if playState says playing
                   if (playState === "playing") {
                     try { e.target.playVideo?.(); } catch {}
                   }
@@ -192,11 +248,11 @@ export default function RoomPage() {
             )}
           </div>
 
-          {/* Floating overlay controls */}
-          <div className="absolute left-0 right-0 bottom-6 flex items-center justify-center gap-4 pointer-events-auto">
+          {/* bottom control bar (non-overlapping) */}
+          <div className="video-controls-bar">
             <button
               onClick={togglePlay}
-              className="overlay-control bg-white text-black p-4 rounded-full shadow-2xl"
+              className="overlay-control bg-white text-black p-3 rounded-full shadow-lg"
               aria-label="Play/Pause"
             >
               {playState === "playing" ? <FaPause size={18} /> : <FaPlay size={18} />}
@@ -204,30 +260,36 @@ export default function RoomPage() {
 
             <button
               onClick={skip}
-              className="overlay-control bg-pink-500 hover:bg-pink-400 p-4 rounded-full shadow-2xl text-white"
+              className="overlay-control bg-pink-500 hover:bg-pink-400 p-3 rounded-full shadow-lg text-white"
               aria-label="Skip"
             >
               <FaStepForward size={18} />
             </button>
 
-            <button className="overlay-control bg-white/10 p-4 rounded-full shadow-lg text-white">
-              <FaListUl size={18} />
-            </button>
+            <div className="ml-2 text-sm text-gray-200">
+              {currentSong ? <div className="font-medium">{currentSong.title}</div> : <div>No song playing</div>}
+            </div>
           </div>
 
-          {/* scoring popover */}
+          {/* scoring popover + confetti container */}
+          <div ref={confettiRef} className="confetti-container" />
           {showScore && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="pointer-events-auto bg-white/95 text-black rounded-2xl p-6 shadow-2xl w-80 text-center animate-fade-in">
-                <div className="text-2xl font-bold mb-1">Score</div>
-                <div className="text-4xl font-extrabold">{lastScore}</div>
-                <div className="text-sm text-gray-600 mt-2">Great job! Next song will play shortly.</div>
+              <div className="score-popover pointer-events-auto">
+                <div className="text-xl font-semibold">Performance Score</div>
+                <div className="score-number">{displayScore}</div>
+                <div className="mt-2 text-sm text-gray-600">
+                  {displayScore >= 98 ? "Legendary performance!" :
+                   displayScore >= 94 ? "Amazing! Crowd loved it!" :
+                   displayScore >= 90 ? "Fantastic singing!" :
+                   displayScore >= 86 ? "Great job!" : "Nice effort!"}
+                </div>
               </div>
             </div>
           )}
         </section>
 
-        {/* Compact sidebar */}
+        {/* Sidebar */}
         <aside className="lg:col-span-3 col-span-1 bg-black/50 rounded-3xl shadow-2xl p-6 flex flex-col justify-between">
           <div>
             <h3 className="text-pink-400 font-bold mb-3">▶ UP NEXT</h3>

@@ -55,3 +55,69 @@ body {
   transform: translateY(-4px) scale(1.03);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
+
+/* Force player to fill container */
+.yt-wrapper { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.yt-iframe, .yt-wrapper iframe { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; border: 0; }
+
+/* Bottom control bar (non-overlapping) */
+.video-controls-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: linear-gradient(90deg, rgba(17,24,39,0.6), rgba(17,24,39,0.4));
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Scoring popover */
+.score-popover {
+  width: 420px;
+  max-width: 90%;
+  background: rgba(255,255,255,0.96);
+  color: #000;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  text-align: center;
+}
+
+/* Score big number */
+.score-number {
+  font-size: 64px;
+  font-weight: 900;
+  letter-spacing: -2px;
+  margin-top: 6px;
+}
+
+/* Confetti container */
+.confetti-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* small confetti piece */
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 16px;
+  opacity: 0.95;
+  transform-origin: center;
+  will-change: transform, opacity;
+  border-radius: 2px;
+}
+
+/* overlay-control hover */
+.overlay-control { transition: transform .18s ease, box-shadow .18s ease; }
+.overlay-control:hover { transform: translateY(-4px) scale(1.03); box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+
+/* responsive tweaks for mobile */
+@media (max-width: 640px) {
+  .video-controls-bar { padding: 10px; gap: 8px; }
+  .score-number { font-size: 44px; }
+  .score-popover { padding: 16px; }
+}
+

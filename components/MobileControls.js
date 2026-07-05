@@ -36,7 +36,6 @@ export default function MobileControls({ roomId }) {
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       const json = await res.json();
-      // expected items: { videoId, title, thumbnail, channelTitle }
       setResults(json.items || []);
     } catch (e) {
       console.error(e);
@@ -46,10 +45,8 @@ export default function MobileControls({ roomId }) {
     }
   };
 
-  // add to queue as object with title and thumbnail
   const handleQueue = async (item) => {
     if (!roomId) return;
-    // item: { videoId, title, thumbnail }
     await push(ref(db, `rooms/${roomId}/queue`), {
       videoId: item.videoId,
       title: item.title,
@@ -58,7 +55,6 @@ export default function MobileControls({ roomId }) {
     });
   };
 
-  // play now: set currentSong and push to queue (so host history keeps it)
   const handlePlayNow = async (item) => {
     if (!roomId) return;
     await set(ref(db, `rooms/${roomId}/currentSong`), {
@@ -66,7 +62,6 @@ export default function MobileControls({ roomId }) {
       title: item.title,
       thumbnail: item.thumbnail
     });
-    // also push to queue so it appears in history/queue ordering
     await push(ref(db, `rooms/${roomId}/queue`), {
       videoId: item.videoId,
       title: item.title,
@@ -84,7 +79,6 @@ export default function MobileControls({ roomId }) {
 
   const handleSkip = async () => {
     if (!roomId) return;
-    // remove first queue item and set next as currentSong (same logic as host)
     const qRef = ref(db, `rooms/${roomId}/queue`);
     const snap = await get(qRef);
     const data = snap.val() || {};
@@ -98,7 +92,6 @@ export default function MobileControls({ roomId }) {
     const next = data[keys[1]] || null;
     await remove(ref(db, `rooms/${roomId}/queue/${firstKey}`));
     await set(ref(db, `rooms/${roomId}/currentSong`), next || null);
-    // autoplay next if exists
     if (next) await set(ref(db, `rooms/${roomId}/playState`), "playing");
   };
 
@@ -137,7 +130,6 @@ export default function MobileControls({ roomId }) {
                   <div className="text-xs opacity-80">{r.channelTitle}</div>
                 </div>
 
-                {/* If no currentSong -> Play button, else Queue button */}
                 {currentSong ? (
                   <button
                     onClick={() => handleQueue({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
@@ -194,7 +186,7 @@ export default function MobileControls({ roomId }) {
               <div className="text-xs text-gray-400">No songs queued yet.</div>
             ) : (
               <ul className="space-y-2 max-h-40 overflow-auto">
-                {queue.map((v, i) => (
+                {queue.map((v) => (
                   <li key={v.key} className="flex items-center gap-3 bg-white/6 p-2 rounded">
                     <img src={v.thumbnail} alt="" className="w-16 h-10 rounded object-cover" />
                     <div className="flex-1 text-sm line-clamp-2">{v.title}</div>
