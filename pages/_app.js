@@ -3,7 +3,24 @@ import "../style/globals.css";
 import Head from "next/head";
 import Script from "next/script";
 
+// in a component or _app.js (client-side)
+import { useEffect } from "react";
+import { initAuth, initAnalytics } from "../utils/firebase";
+import { logEvent } from "firebase/analytics";
+
 export default function MyApp({ Component, pageProps }) {
+  useEffect(() => {
+    let mounted = true;
+    initAuth(); // returns auth instance or null
+    initAnalytics().then((analytics) => {
+      if (!mounted || !analytics) return;
+      logEvent(analytics, "analytics_initialized");
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <>
       <Head>
