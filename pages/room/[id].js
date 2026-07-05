@@ -17,17 +17,18 @@ export default function RoomPage() {
   const isMobile = router.query.mobile === "true";
 
   const [currentSong, setCurrentSong] = useState(null); // { videoId, title, thumbnail }
-  const [queue, setQueue] = useState([]); // [{ key, videoId, title, thumbnail }]
+  const [queue, setQueue] = useState([]); // [{ key, videoId, title, thumbnail, addedAt }]
   const [playState, setPlayState] = useState("paused");
   const [showScore, setShowScore] = useState(false);
   const [displayScore, setDisplayScore] = useState(0);
   const [finalScore, setFinalScore] = useState(0);
+
   const playerRef = useRef(null);
   const scoreAnimRef = useRef(null);
   const scoringTimeoutRef = useRef(null);
   const confettiRef = useRef(null);
 
-  // subscribe to firebase
+  // Subscribe to Firebase nodes
   useEffect(() => {
     if (!id) return;
     const curRef = ref(db, `rooms/${id}/currentSong`);
@@ -38,6 +39,8 @@ export default function RoomPage() {
     const unsubQ = onValue(qRef, (snap) => {
       const data = snap.val() || {};
       const arr = Object.entries(data).map(([key, value]) => ({ key, ...value }));
+      // sort by addedAt ascending (older first)
+      arr.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
       setQueue(arr);
     });
     const unsubP = onValue(pRef, (snap) => setPlayState(snap.val() || "paused"));
@@ -45,7 +48,7 @@ export default function RoomPage() {
     return () => { unsubCur(); unsubQ(); unsubP(); };
   }, [id]);
 
-  // ensure player follows playState
+  // Ensure player follows playState
   useEffect(() => {
     if (!playerRef.current) return;
     try {
@@ -54,7 +57,7 @@ export default function RoomPage() {
     } catch {}
   }, [playState]);
 
-  // load new video when currentSong changes and autoplay
+  // Load new video when currentSong changes and attempt autoplay
   useEffect(() => {
     if (!playerRef.current) return;
     if (!currentSong) {
@@ -63,32 +66,53 @@ export default function RoomPage() {
     }
     try {
       playerRef.current.loadVideoById(currentSong.videoId);
-      // attempt autoplay
+      // small delay then try to play (helps with some autoplay policies)
       setTimeout(() => {
         try { playerRef.current.playVideo?.(); } catch {}
       }, 250);
     } catch {}
   }, [currentSong]);
 
-  // advance queue helper (removes first and sets next)
+  // Helper: get ordered entries from snapshot object (by addedAt)
+  const orderedEntries = (dataObj) => {
+    const arr = Object.entries(dataObj || {}).map(([key, value]) => ({ key, ...value }));
+    arr.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+    return arr;
+  };
+
+  // Advance queue: remove first (oldest) and set next as currentSong, ensure autoplay
   const advanceQueue = async () => {
     if (!id) return;
     const qRef = ref(db, `rooms/${id}/queue`);
     const snap = await get(qRef);
     const data = snap.val() || {};
-    const keys = Object.keys(data);
-    if (keys.length === 0) {
+    const ordered = orderedEntries(data);
+    if (ordered.length === 0) {
       await set(ref(db, `rooms/${id}/currentSong`), null);
       await set(ref(db, `rooms/${id}/playState`), "paused");
       return;
     }
-    const firstKey = keys[0];
-    const nextKey = keys[1] || null;
+    const firstKey = ordered[0].key;
+    const next = ordered[1] || null;
+    // remove first
     await remove(ref(db, `rooms/${id}/queue/${firstKey}`));
-    if (nextKey) {
-      const next = data[nextKey];
-      await set(ref(db, `rooms/${id}/currentSong`), next);
+    if (next) {
+      // set next as currentSong and autoplay
+      await set(ref(db, `rooms/${id}/currentSong`), {
+        videoId: next.videoId,
+        title: next.title,
+        thumbnail: next.thumbnail
+      });
       await set(ref(db, `rooms/${id}/playState`), "playing");
+      // If host player exists, load and play immediately for reliability
+      setTimeout(() => {
+        try {
+          if (playerRef.current) {
+            playerRef.current.loadVideoById(next.videoId);
+            playerRef.current.playVideo?.();
+          }
+        } catch {}
+      }, 300);
     } else {
       await set(ref(db, `rooms/${id}/currentSong`), null);
       await set(ref(db, `rooms/${id}/playState`), "paused");
@@ -102,12 +126,11 @@ export default function RoomPage() {
       // compute final score between 80 and 100
       const score = 80 + Math.floor(Math.random() * 21); // 80..100
       setFinalScore(score);
-      // show scoring popover and animate count up for 3s, then advance
       startScoreSequence(score);
     }
   };
 
-  // start scoring animation + confetti + advance after 3s
+  // Start scoring animation (3s count-up) then 2s pause, then advance & autoplay
   const startScoreSequence = (score) => {
     // clear any existing
     if (scoreAnimRef.current) cancelAnimationFrame(scoreAnimRef.current);
@@ -116,15 +139,15 @@ export default function RoomPage() {
     setShowScore(true);
     launchConfetti();
 
-    const duration = 3000; // 3 seconds
+    const countDuration = 3000; // 3s count-up
+    const pauseAfter = 2000; // 2s pause to appreciate score
     const start = performance.now();
     const from = 0;
     const to = score;
 
     const step = (now) => {
-      const t = Math.min(1, (now - start) / duration);
-      // easeOutCubic for drama
-      const eased = 1 - Math.pow(1 - t, 3);
+      const t = Math.min(1, (now - start) / countDuration);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
       const current = Math.floor(from + (to - from) * eased);
       setDisplayScore(current);
       if (t < 1) {
@@ -135,22 +158,20 @@ export default function RoomPage() {
     };
     scoreAnimRef.current = requestAnimationFrame(step);
 
+    // After countDuration + pauseAfter, stop confetti, hide score, advance queue
     scoringTimeoutRef.current = setTimeout(async () => {
-      // stop confetti
       stopConfetti();
       setShowScore(false);
       setDisplayScore(0);
       scoringTimeoutRef.current = null;
-      // advance and autoplay next
       await advanceQueue();
-    }, duration);
+    }, countDuration + pauseAfter);
   };
 
-  // confetti helpers (DOM-based)
+  // Confetti helpers (DOM-based)
   const launchConfetti = () => {
     const container = confettiRef.current;
     if (!container) return;
-    // clear existing
     container.innerHTML = "";
     const colors = ["#ff4da6", "#7c3aed", "#06b6d4", "#f97316", "#fde047"];
     const pieces = 40;
@@ -163,7 +184,6 @@ export default function RoomPage() {
       el.style.transform = `rotate(${Math.random() * 360}deg)`;
       el.style.opacity = `${0.9 + Math.random() * 0.1}`;
       container.appendChild(el);
-      // animate each piece
       const dx = (Math.random() - 0.5) * 600;
       const dy = 400 + Math.random() * 300;
       const rot = (Math.random() - 0.5) * 720;
@@ -176,7 +196,6 @@ export default function RoomPage() {
         fill: "forwards"
       });
     }
-    // remove after 3s
     setTimeout(() => { if (container) container.innerHTML = ""; }, 3200);
   };
 
@@ -185,7 +204,7 @@ export default function RoomPage() {
     if (container) container.innerHTML = "";
   };
 
-  // host actions
+  // Host actions
   const togglePlay = async () => {
     if (!id) return;
     const newState = playState === "playing" ? "paused" : "playing";
@@ -194,7 +213,7 @@ export default function RoomPage() {
 
   const skip = async () => {
     if (!id) return;
-    // show scoring briefly then advance (same as end-of-song)
+    // show scoring sequence then advance (same as end-of-song)
     const score = 80 + Math.floor(Math.random() * 21);
     setFinalScore(score);
     startScoreSequence(score);
@@ -230,7 +249,6 @@ export default function RoomPage() {
                 }}
                 onReady={(e) => {
                   playerRef.current = e.target;
-                  // autoplay if playState says playing
                   if (playState === "playing") {
                     try { e.target.playVideo?.(); } catch {}
                   }
@@ -297,7 +315,7 @@ export default function RoomPage() {
               <p className="text-gray-400">No songs queued yet</p>
             ) : (
               <ul className="space-y-3 max-h-[60vh] overflow-auto">
-                {queue.map((item, i) => (
+                {queue.map((item) => (
                   <li key={item.key} className="flex items-center gap-3 bg-white/6 p-2 rounded-lg">
                     <img src={item.thumbnail} alt="thumb" className="w-20 h-12 rounded object-cover" />
                     <div className="flex-1">
