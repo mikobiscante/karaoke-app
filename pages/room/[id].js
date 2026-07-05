@@ -36,7 +36,7 @@ export default function RoomPage() {
   const scoringTimeoutRef = useRef(null);
   const confettiRef = useRef(null);
 
-  // Subscribe to Firebase nodes
+  // Subscribe to Firebase nodes (queue, currentSong, playState) + mobile skip listener
   useEffect(() => {
     if (!id) return;
     const curRef = ref(db, `rooms/${id}/currentSong`);
@@ -52,7 +52,6 @@ export default function RoomPage() {
         key,
         ...value,
       }));
-      // sort by addedAt ascending (older first)
       arr.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
       setQueue(arr);
     });
@@ -60,10 +59,31 @@ export default function RoomPage() {
       setPlayState(snap.val() || "paused"),
     );
 
+    // mobile no-score skip listener
+    const skipNoScoreRef = ref(db, `rooms/${id}/skipRequestNoScore`);
+    const unsubSkipNoScore = onValue(skipNoScoreRef, (snap) => {
+      const val = snap.val();
+      if (val && val.requestedAt) {
+        // clear the request so it doesn't re-trigger
+        set(skipNoScoreRef, null).catch(() => {});
+        // call the authoritative handler on the host
+        handleSkipNoScore();
+      }
+    });
+
     return () => {
-      unsubCur();
-      unsubQ();
-      unsubP();
+      try {
+        unsubCur();
+      } catch (e) {}
+      try {
+        unsubQ();
+      } catch (e) {}
+      try {
+        unsubP();
+      } catch (e) {}
+      try {
+        unsubSkipNoScore();
+      } catch (e) {}
     };
   }, [id]);
 
@@ -173,16 +193,6 @@ export default function RoomPage() {
     };
   }, [id, playState, router]);
 
-  // Helper: get ordered entries from snapshot object (by addedAt)
-  const orderedEntries = (dataObj) => {
-    const arr = Object.entries(dataObj || {}).map(([key, value]) => ({
-      key,
-      ...value,
-    }));
-    arr.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
-    return arr;
-  };
-
   // Force host player to load & play whenever currentSong changes in Firebase
   useEffect(() => {
     if (!playerRef.current) return;
@@ -199,6 +209,16 @@ export default function RoomPage() {
     }, 300);
     return () => clearTimeout(t);
   }, [currentSong]);
+
+  // Helper: get ordered entries from snapshot object (by addedAt)
+  const orderedEntries = (dataObj) => {
+    const arr = Object.entries(dataObj || {}).map(([key, value]) => ({
+      key,
+      ...value,
+    }));
+    arr.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+    return arr;
+  };
 
   // Advance queue: remove first (oldest) and set next as currentSong, ensure autoplay on host player
   const advanceQueue = async () => {
@@ -414,12 +434,9 @@ export default function RoomPage() {
     await set(ref(db, `rooms/${id}/playState`), newState);
   };
 
+  // room skip should not show score — call the authoritative no-score skip
   const skip = async () => {
-    if (!id) return;
-    // show scoring sequence then advance (same as end-of-song)
-    const score = 80 + Math.floor(Math.random() * 21);
-    setFinalScore(score);
-    startScoreSequence(score);
+    await handleSkipNoScore();
   };
 
   // Try to force play with a few retries (helps with autoplay race conditions)
