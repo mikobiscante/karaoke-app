@@ -1,17 +1,26 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* style/globals.css */
 
-/* Use explicit CSS for body background and color to avoid @apply issues */
-@layer base {
-  html, body, #__next {
-    height: 100%;
-  }
+/* 1. This single line replaces your old v3 @tailwind directives */
+@import "tailwindcss";
 
-  body {
-    background-color: #111827; /* Tailwind bg-gray-900 hex */
-    color: #ffffff;
-    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    margin: 0;
-  }
+/* 2. Custom styles are now written directly without @layer base wrappers */
+html,
+body,
+#__next {
+  height: 100%;
 }
+
+body {
+  background-color: #111827;
+  color: #ffffff;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  margin: 0;
+}
+
+.yt-player-full {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 3. If you need a custom safelist in v4, you declare it directly inside the CSS like this: */
+@safelist bg-pink-500, bg-cyan-500, text-pink-400, text-cyan-400;
