@@ -422,6 +422,7 @@ export default function RoomPage() {
     startScoreSequence(score);
   };
 
+  // Try to force play with a few retries (helps with autoplay race conditions)
   const tryPlayWithRetries = (videoId, attempts = 4, delay = 350) => {
     let tries = 0;
     const attempt = () => {
@@ -432,11 +433,64 @@ export default function RoomPage() {
           playerRef.current.playVideo?.();
         }
       } catch (err) {
-        // ignore and retry
+        // ignore; we'll retry
       }
       if (tries < attempts) setTimeout(attempt, delay);
     };
     attempt();
+  };
+
+  // Skip without scoring — advance queue and force autoplay on host monitor
+  const handleSkipNoScore = async () => {
+    if (!id) return;
+    try {
+      const qRef = ref(db, `rooms/${id}/queue`);
+      const snap = await get(qRef);
+      const data = snap.val() || {};
+      const ordered = Object.entries(data || {})
+        .map(([key, value]) => ({ key, ...value }))
+        .sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+
+      if (ordered.length === 0) {
+        await set(ref(db, `rooms/${id}/currentSong`), null);
+        await set(ref(db, `rooms/${id}/playState`), "paused");
+        return;
+      }
+
+      const firstKey = ordered[0].key;
+      const next = ordered[1] || null;
+
+      // remove the finished (first) entry
+      await remove(ref(db, `rooms/${id}/queue/${firstKey}`));
+
+      if (next) {
+        // set next as currentSong and request autoplay
+        await set(ref(db, `rooms/${id}/currentSong`), {
+          videoId: next.videoId,
+          title: next.title,
+          thumbnail: next.thumbnail,
+        });
+        await set(ref(db, `rooms/${id}/playState`), "playing");
+
+        // small delay then force host player to load & play with retries
+        setTimeout(async () => {
+          try {
+            const csSnap = await get(ref(db, `rooms/${id}/currentSong`));
+            const cs = csSnap.val();
+            const vid = cs?.videoId || next.videoId;
+            if (vid) tryPlayWithRetries(vid, 4, 350);
+          } catch (err) {
+            console.warn("Could not auto-play next video on host player:", err);
+          }
+        }, 350);
+      } else {
+        // no next
+        await set(ref(db, `rooms/${id}/currentSong`), null);
+        await set(ref(db, `rooms/${id}/playState`), "paused");
+      }
+    } catch (err) {
+      console.error("handleSkipNoScore failed:", err);
+    }
   };
 
   if (!id) return null;
