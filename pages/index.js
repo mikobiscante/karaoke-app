@@ -27,7 +27,7 @@ export default function Home() {
       {/* Header */}
       <header className="w-full flex justify-between items-center mb-12">
         <div className="flex items-center gap-3">
-          <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-10" />
+          {/* <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-10" /> */}
           <h1 className="text-2xl font-bold tracking-wide">Karaoke SingGing</h1>
         </div>
         <div className="text-sm font-semibold text-pink-400">💯 100% Free</div>

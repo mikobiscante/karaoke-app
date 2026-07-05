@@ -111,7 +111,7 @@ export default function RoomPage() {
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-4 bg-black/30 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-10" />
+          {/* <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-10" /> */}
           <div>
             <div className="text-lg font-bold">Karaoke SingGing</div>
             <div className="text-xs text-gray-300">ROOM CODE — <span className="font-mono">{id}</span></div>
