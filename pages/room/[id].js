@@ -80,44 +80,56 @@ export default function RoomPage() {
     return arr;
   };
 
-  // Advance queue: remove first (oldest) and set next as currentSong, ensure autoplay
-  const advanceQueue = async () => {
-    if (!id) return;
-    const qRef = ref(db, `rooms/${id}/queue`);
-    const snap = await get(qRef);
-    const data = snap.val() || {};
-    const ordered = orderedEntries(data);
-    if (ordered.length === 0) {
-      await set(ref(db, `rooms/${id}/currentSong`), null);
-      await set(ref(db, `rooms/${id}/playState`), "paused");
-      return;
-    }
-    const firstKey = ordered[0].key;
-    const next = ordered[1] || null;
-    // remove first
-    await remove(ref(db, `rooms/${id}/queue/${firstKey}`));
-    if (next) {
-      // set next as currentSong and autoplay
-      await set(ref(db, `rooms/${id}/currentSong`), {
-        videoId: next.videoId,
-        title: next.title,
-        thumbnail: next.thumbnail
-      });
-      await set(ref(db, `rooms/${id}/playState`), "playing");
-      // If host player exists, load and play immediately for reliability
-      setTimeout(() => {
-        try {
-          if (playerRef.current) {
-            playerRef.current.loadVideoById(next.videoId);
-            playerRef.current.playVideo?.();
-          }
-        } catch {}
-      }, 300);
-    } else {
-      await set(ref(db, `rooms/${id}/currentSong`), null);
-      await set(ref(db, `rooms/${id}/playState`), "paused");
-    }
-  };
+  // Advance queue: remove first (oldest) and set next as currentSong, ensure autoplay on host player
+const advanceQueue = async () => {
+  if (!id) return;
+  const qRef = ref(db, `rooms/${id}/queue`);
+  const snap = await get(qRef);
+  const data = snap.val() || {};
+  // order by addedAt ascending
+  const ordered = Object.entries(data || {}).map(([key, value]) => ({ key, ...value }))
+    .sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+
+  if (ordered.length === 0) {
+    await set(ref(db, `rooms/${id}/currentSong`), null);
+    await set(ref(db, `rooms/${id}/playState`), "paused");
+    return;
+  }
+
+  const firstKey = ordered[0].key;
+  const next = ordered[1] || null;
+
+  // remove the finished (first) entry
+  await remove(ref(db, `rooms/${id}/queue/${firstKey}`));
+
+  if (next) {
+    // set next as currentSong and request autoplay
+    await set(ref(db, `rooms/${id}/currentSong`), {
+      videoId: next.videoId,
+      title: next.title,
+      thumbnail: next.thumbnail
+    });
+    await set(ref(db, `rooms/${id}/playState`), "playing");
+
+    // small delay to let Firebase propagate, then force host player to load & play
+    setTimeout(() => {
+      try {
+        if (playerRef.current && next.videoId) {
+          playerRef.current.loadVideoById(next.videoId);
+          // try to play; browsers may block autoplay without a user gesture
+          playerRef.current.playVideo?.();
+        }
+      } catch (err) {
+        console.warn("Could not auto-play next video on host player:", err);
+      }
+    }, 300);
+  } else {
+    // no next
+    await set(ref(db, `rooms/${id}/currentSong`), null);
+    await set(ref(db, `rooms/${id}/playState`), "paused");
+  }
+};
+
 
   // YouTube state change handler
   const onPlayerStateChange = async (e) => {
@@ -130,43 +142,82 @@ export default function RoomPage() {
     }
   };
 
-  // Start scoring animation (3s count-up) then 2s pause, then advance & autoplay
-  const startScoreSequence = (score) => {
-    // clear any existing
-    if (scoreAnimRef.current) cancelAnimationFrame(scoreAnimRef.current);
-    if (scoringTimeoutRef.current) clearTimeout(scoringTimeoutRef.current);
-    setDisplayScore(0);
-    setShowScore(true);
-    launchConfetti();
+  // start scoring animation + confetti + advance after count-up + pause
+const startScoreSequence = (score) => {
+  // clear any existing animations/timeouts
+  if (scoreAnimRef.current) cancelAnimationFrame(scoreAnimRef.current);
+  if (scoringTimeoutRef.current) clearTimeout(scoringTimeoutRef.current);
+  setDisplayScore(0);
+  setShowScore(true);
+  launchConfetti();
 
-    const countDuration = 3000; // 3s count-up
-    const pauseAfter = 2000; // 2s pause to appreciate score
-    const start = performance.now();
-    const from = 0;
-    const to = score;
+  const countDuration = 3000; // 3s count-up
+  const pauseAfter = 2000; // 2s appreciation pause
+  const start = performance.now();
+  const from = 0;
+  const to = score;
 
-    const step = (now) => {
-      const t = Math.min(1, (now - start) / countDuration);
-      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
-      const current = Math.floor(from + (to - from) * eased);
-      setDisplayScore(current);
-      if (t < 1) {
-        scoreAnimRef.current = requestAnimationFrame(step);
-      } else {
-        scoreAnimRef.current = null;
-      }
-    };
-    scoreAnimRef.current = requestAnimationFrame(step);
-
-    // After countDuration + pauseAfter, stop confetti, hide score, advance queue
-    scoringTimeoutRef.current = setTimeout(async () => {
-      stopConfetti();
-      setShowScore(false);
-      setDisplayScore(0);
-      scoringTimeoutRef.current = null;
-      await advanceQueue();
-    }, countDuration + pauseAfter);
+  // animate numeric count-up with easeOutCubic
+  const step = (now) => {
+    const t = Math.min(1, (now - start) / countDuration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const current = Math.floor(from + (to - from) * eased);
+    setDisplayScore(current);
+    if (t < 1) {
+      scoreAnimRef.current = requestAnimationFrame(step);
+    } else {
+      scoreAnimRef.current = null;
+    }
   };
+  scoreAnimRef.current = requestAnimationFrame(step);
+
+  // After countDuration + pauseAfter, stop confetti, hide score, then advance & autoplay next
+  scoringTimeoutRef.current = setTimeout(async () => {
+    // cleanup visuals
+    stopConfetti();
+    setShowScore(false);
+    setDisplayScore(0);
+    scoringTimeoutRef.current = null;
+
+    // Advance queue and ensure autoplay on host player
+    try {
+      await advanceQueue();
+      // After advanceQueue sets currentSong and playState, attempt to force play again
+      // small safety delay to allow Firebase propagation
+      setTimeout(() => {
+        try {
+          // read currentSong from local state (it will update via onValue), but force play if player exists
+          if (playerRef.current) {
+            // if currentSong exists in state, use it; otherwise try to fetch from DB
+            const nextId = (currentSong && currentSong.videoId) ? currentSong.videoId : null;
+            // If nextId is null, try to fetch the currentSong from DB to play
+            if (!nextId) {
+              get(ref(db, `rooms/${id}/currentSong`)).then((snap) => {
+                const cs = snap.val();
+                if (cs && cs.videoId) {
+                  try {
+                    playerRef.current.loadVideoById(cs.videoId);
+                    playerRef.current.playVideo?.();
+                  } catch (err) { /* ignore */ }
+                }
+              }).catch(() => {});
+            } else {
+              try {
+                playerRef.current.loadVideoById(nextId);
+                playerRef.current.playVideo?.();
+              } catch (err) { /* ignore */ }
+            }
+          }
+        } catch (err) {
+          console.warn("Error forcing play after advance:", err);
+        }
+      }, 350);
+    } catch (err) {
+      console.error("advanceQueue failed:", err);
+    }
+  }, countDuration + pauseAfter);
+};
+
 
   // Confetti helpers (DOM-based)
   const launchConfetti = () => {
