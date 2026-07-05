@@ -7,6 +7,17 @@ import { db } from "../../utils/firebase";
 import YouTube from "react-youtube";
 import { FaPlay, FaPause, FaStepForward, FaListUl } from "react-icons/fa";
 
+// top of file or component
+import AdSlot from "../../components/AdSlot";
+import { initAnalytics, getAnalyticsInstance } from "../../utils/firebase";
+import { logEvent } from "firebase/analytics";
+
+const ADS_CLIENT =
+  process.env.NEXT_PUBLIC_ADSENSE_CLIENT || "ca-pub-XXXXXXXXXXXX";
+const ADS_SLOT_MAIN = process.env.NEXT_PUBLIC_ADS_SLOT_MAIN || "1111111111";
+const ADS_SLOT_SIDEBAR =
+  process.env.NEXT_PUBLIC_ADS_SLOT_SIDEBAR || "2222222222";
+
 const MobileControls = dynamic(
   () => import("../../components/MobileControls"),
   { ssr: false },
@@ -209,6 +220,31 @@ export default function RoomPage() {
     }, 300);
     return () => clearTimeout(t);
   }, [currentSong]);
+
+  useEffect(() => {
+    let mounted = true;
+    initAnalytics().then((a) => {
+      if (!mounted) return;
+      if (a) logEvent(a, "analytics_initialized");
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const analytics = getAnalyticsInstance();
+    if (!analytics) return;
+    if (!currentSong) {
+      logEvent(analytics, "ad_shown", { slot: "main", roomId: id || null });
+    }
+  }, [currentSong, id]);
+
+  useEffect(() => {
+    const analytics = getAnalyticsInstance();
+    if (!analytics) return;
+    logEvent(analytics, "ad_shown", { slot: "sidebar", roomId: id || null });
+  }, [id]); // run once per room load
 
   // Helper: get ordered entries from snapshot object (by addedAt)
   const orderedEntries = (dataObj) => {
@@ -570,8 +606,18 @@ export default function RoomPage() {
                   <div className="text-3xl font-bold mb-2">
                     Waiting for a song to be queued...
                   </div>
-                  <div className="text-sm opacity-80">
+                  <div className="text-sm opacity-80 mb-2">
                     Guests can scan the QR code to add songs.
+                  </div>
+                  <div
+                    className="ad-container main-ad"
+                    style={{ width: "100%", minHeight: 250 }}
+                  >
+                    <AdSlot
+                      client={ADS_CLIENT}
+                      slot={ADS_SLOT_MAIN}
+                      responsive={true}
+                    />
                   </div>
                 </div>
               </div>
@@ -660,6 +706,17 @@ export default function RoomPage() {
                 ))}
               </ul>
             )}
+          </div>
+
+          <div
+            className="ad-container sidebar-ad"
+            style={{ width: 300, height: 100, marginTop: 12 }}
+          >
+            <AdSlot
+              client={ADS_CLIENT}
+              slot={ADS_SLOT_SIDEBAR}
+              responsive={false}
+            />
           </div>
 
           <div className="mt-6 bg-white/6 p-4 rounded-xl text-center">
