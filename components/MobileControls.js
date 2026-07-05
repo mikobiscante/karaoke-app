@@ -1,16 +1,20 @@
 // components/MobileControls.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/router";
 import { ref, push, set, onValue, remove, get } from "firebase/database";
 import { db } from "../utils/firebase";
 import { FaPlay, FaPause, FaStepForward, FaListUl, FaSearch } from "react-icons/fa";
 
 export default function MobileControls({ roomId }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [queue, setQueue] = useState([]);
   const [currentSong, setCurrentSong] = useState(null);
   const [playState, setPlayState] = useState("paused");
   const [loadingSearch, setLoadingSearch] = useState(false);
+
+  const idleTimerRef = useRef(null);
 
   useEffect(() => {
     if (!roomId) return;
@@ -21,6 +25,8 @@ export default function MobileControls({ roomId }) {
     const unsubQ = onValue(qRef, (snap) => {
       const data = snap.val() || {};
       const arr = Object.entries(data).map(([key, value]) => ({ key, ...value }));
+      // sort by addedAt if present
+      arr.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
       setQueue(arr);
     });
 
@@ -29,6 +35,52 @@ export default function MobileControls({ roomId }) {
 
     return () => { unsubQ(); unsubCur(); unsubP(); };
   }, [roomId]);
+
+  // Idle redirect: if mobile is idle for 1 hour and nothing is playing, redirect to main page
+  useEffect(() => {
+    if (!roomId) return;
+
+    const IDLE_MS = 60 * 60 * 1000; // 1 hour
+    let timeoutId = null;
+
+    const clearExisting = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+
+    const resetTimer = () => {
+      clearExisting();
+      // do not start idle timer while music is playing
+      if (playState === "playing") return;
+      timeoutId = setTimeout(() => {
+        // redirect to main page when idle timeout fires
+        try {
+          router.push("/");
+        } catch (err) {
+          console.warn("Idle redirect failed:", err);
+        }
+      }, IDLE_MS);
+    };
+
+    const activityEvents = ["touchstart", "click", "scroll", "keydown"];
+    activityEvents.forEach((ev) => window.addEventListener(ev, resetTimer, { passive: true }));
+
+    const onVisibility = () => {
+      if (!document.hidden) resetTimer();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    // start timer initially (only if not playing)
+    resetTimer();
+
+    return () => {
+      clearExisting();
+      activityEvents.forEach((ev) => window.removeEventListener(ev, resetTimer));
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [roomId, playState, router]);
 
   const search = async (q) => {
     if (!q) return;
@@ -77,22 +129,10 @@ export default function MobileControls({ roomId }) {
     await set(ref(db, `rooms/${roomId}/playState`), newState);
   };
 
-  const handleSkip = async () => {
+  // Mobile: request a no-score skip (host will listen and run authoritative skip)
+  const requestSkipNoScore = async () => {
     if (!roomId) return;
-    const qRef = ref(db, `rooms/${roomId}/queue`);
-    const snap = await get(qRef);
-    const data = snap.val() || {};
-    const keys = Object.keys(data);
-    if (keys.length === 0) {
-      await set(ref(db, `rooms/${roomId}/currentSong`), null);
-      await set(ref(db, `rooms/${roomId}/playState`), "paused");
-      return;
-    }
-    const firstKey = keys[0];
-    const next = data[keys[1]] || null;
-    await remove(ref(db, `rooms/${roomId}/queue/${firstKey}`));
-    await set(ref(db, `rooms/${roomId}/currentSong`), next || null);
-    if (next) await set(ref(db, `rooms/${roomId}/playState`), "playing");
+    await set(ref(db, `rooms/${roomId}/skipRequestNoScore`), { requestedAt: Date.now() });
   };
 
   return (
@@ -168,7 +208,7 @@ export default function MobileControls({ roomId }) {
                     {playState === "playing" ? <FaPause /> : <FaPlay />}
                   </button>
                   <button
-                    onClick={handleSkip}
+                    onClick={requestSkipNoScore}
                     className="bg-indigo-600 hover:bg-indigo-700 p-3 rounded-full text-white"
                     aria-label="Skip"
                   >

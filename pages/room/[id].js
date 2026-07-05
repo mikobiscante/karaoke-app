@@ -96,6 +96,83 @@ export default function RoomPage() {
     } catch {}
   }, [currentSong]);
 
+  useEffect(() => {
+    if (!playerRef.current) return;
+    if (!currentSong || !currentSong.videoId) return;
+    const t = setTimeout(() => {
+      try {
+        playerRef.current.loadVideoById(currentSong.videoId);
+        playerRef.current.playVideo?.();
+      } catch (err) {
+        console.warn("Force play on currentSong change failed:", err);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [currentSong]);
+
+  // Idle redirect: if room is idle for 1 hour, redirect to main page
+  useEffect(() => {
+    if (!id) return;
+
+    const IDLE_MS = 60 * 60 * 1000; // 1 hour
+    let timeoutId = null;
+
+    // reset timer (clears previous and starts a new one)
+    const resetTimer = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+
+      // If music is playing, do not start the idle timer
+      if (playState === "playing") return;
+
+      timeoutId = setTimeout(() => {
+        // Redirect to main page when idle timeout fires
+        try {
+          router.push("/");
+        } catch (err) {
+          console.warn("Idle redirect failed:", err);
+        }
+      }, IDLE_MS);
+    };
+
+    // activity events that indicate the room is active
+    const activityEvents = [
+      "mousemove",
+      "keydown",
+      "touchstart",
+      "click",
+      "scroll",
+    ];
+
+    // attach listeners
+    activityEvents.forEach((ev) =>
+      window.addEventListener(ev, resetTimer, { passive: true }),
+    );
+
+    // also reset when visibility changes (user returns to tab)
+    const onVisibility = () => {
+      if (!document.hidden) resetTimer();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    // start timer initially (only if not playing)
+    resetTimer();
+
+    // If playState changes to playing, clear the idle timer; if it becomes paused, restart it
+    // (this effect depends on playState below so it will re-run when playState changes)
+
+    return () => {
+      // cleanup listeners and timeout
+      activityEvents.forEach((ev) =>
+        window.removeEventListener(ev, resetTimer),
+      );
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [id, playState, router]);
+
   // Helper: get ordered entries from snapshot object (by addedAt)
   const orderedEntries = (dataObj) => {
     const arr = Object.entries(dataObj || {}).map(([key, value]) => ({
@@ -129,8 +206,7 @@ export default function RoomPage() {
     const qRef = ref(db, `rooms/${id}/queue`);
     const snap = await get(qRef);
     const data = snap.val() || {};
-    // order by addedAt ascending
-    const ordered = Object.entries(data || {})
+    const ordered = Object.entries(data)
       .map(([key, value]) => ({ key, ...value }))
       .sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
 
@@ -147,7 +223,6 @@ export default function RoomPage() {
     await remove(ref(db, `rooms/${id}/queue/${firstKey}`));
 
     if (next) {
-      // set next as currentSong and request autoplay
       await set(ref(db, `rooms/${id}/currentSong`), {
         videoId: next.videoId,
         title: next.title,
@@ -155,23 +230,18 @@ export default function RoomPage() {
       });
       await set(ref(db, `rooms/${id}/playState`), "playing");
 
-      // small delay to let Firebase propagate, then force host player to load & play
+      // small delay then try to force play with retries
       setTimeout(async () => {
         try {
-          // try to read currentSong from DB to be safe
           const csSnap = await get(ref(db, `rooms/${id}/currentSong`));
           const cs = csSnap.val();
           const vid = cs?.videoId || next.videoId;
-          if (playerRef.current && vid) {
-            playerRef.current.loadVideoById(vid);
-            playerRef.current.playVideo?.();
-          }
+          if (vid) tryPlayWithRetries(vid, 4, 350);
         } catch (err) {
           console.warn("Could not auto-play next video on host player:", err);
         }
       }, 350);
     } else {
-      // no next
       await set(ref(db, `rooms/${id}/currentSong`), null);
       await set(ref(db, `rooms/${id}/playState`), "paused");
     }
@@ -189,8 +259,64 @@ export default function RoomPage() {
   };
 
   // start scoring animation + confetti + advance after count-up + 2s pause
+  // const startScoreSequence = (score) => {
+  //   // clear any existing animations/timeouts
+  //   if (scoreAnimRef.current) cancelAnimationFrame(scoreAnimRef.current);
+  //   if (scoringTimeoutRef.current) clearTimeout(scoringTimeoutRef.current);
+  //   setDisplayScore(0);
+  //   setShowScore(true);
+  //   launchConfetti();
+
+  //   const countDuration = 3000; // 3s count-up
+  //   const pauseAfter = 2000; // 2s appreciation pause
+  //   const start = performance.now();
+  //   const from = 0;
+  //   const to = score;
+
+  //   // animate numeric count-up with easeOutCubic
+  //   const step = (now) => {
+  //     const t = Math.min(1, (now - start) / countDuration);
+  //     const eased = 1 - Math.pow(1 - t, 3);
+  //     const current = Math.floor(from + (to - from) * eased);
+  //     setDisplayScore(current);
+  //     if (t < 1) {
+  //       scoreAnimRef.current = requestAnimationFrame(step);
+  //     } else {
+  //       scoreAnimRef.current = null;
+  //     }
+  //   };
+  //   scoreAnimRef.current = requestAnimationFrame(step);
+
+  //   // After countDuration + pauseAfter, stop confetti, hide score, then advance & autoplay next
+  //   scoringTimeoutRef.current = setTimeout(async () => {
+  //     stopConfetti();
+  //     setShowScore(false);
+  //     setDisplayScore(0);
+  //     scoringTimeoutRef.current = null;
+
+  //     // Advance queue and ensure autoplay on host player
+  //     try {
+  //       await advanceQueue();
+  //       // After advanceQueue sets currentSong and playState, attempt to force play again
+  //       setTimeout(async () => {
+  //         try {
+  //           // fetch currentSong from DB to ensure we have the latest
+  //           const csSnap = await get(ref(db, `rooms/${id}/currentSong`));
+  //           const cs = csSnap.val();
+  //           if (cs && cs.videoId && playerRef.current) {
+  //             playerRef.current.loadVideoById(cs.videoId);
+  //             playerRef.current.playVideo?.();
+  //           }
+  //         } catch (err) {
+  //           console.warn("Error forcing play after advance:", err);
+  //         }
+  //       }, 350);
+  //     } catch (err) {
+  //       console.error("advanceQueue failed:", err);
+  //     }
+  //   }, countDuration + pauseAfter);
+  // };
   const startScoreSequence = (score) => {
-    // clear any existing animations/timeouts
     if (scoreAnimRef.current) cancelAnimationFrame(scoreAnimRef.current);
     if (scoringTimeoutRef.current) clearTimeout(scoringTimeoutRef.current);
     setDisplayScore(0);
@@ -203,40 +329,30 @@ export default function RoomPage() {
     const from = 0;
     const to = score;
 
-    // animate numeric count-up with easeOutCubic
     const step = (now) => {
       const t = Math.min(1, (now - start) / countDuration);
-      const eased = 1 - Math.pow(1 - t, 3);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
       const current = Math.floor(from + (to - from) * eased);
       setDisplayScore(current);
-      if (t < 1) {
-        scoreAnimRef.current = requestAnimationFrame(step);
-      } else {
-        scoreAnimRef.current = null;
-      }
+      if (t < 1) scoreAnimRef.current = requestAnimationFrame(step);
+      else scoreAnimRef.current = null;
     };
     scoreAnimRef.current = requestAnimationFrame(step);
 
-    // After countDuration + pauseAfter, stop confetti, hide score, then advance & autoplay next
     scoringTimeoutRef.current = setTimeout(async () => {
       stopConfetti();
       setShowScore(false);
       setDisplayScore(0);
       scoringTimeoutRef.current = null;
 
-      // Advance queue and ensure autoplay on host player
       try {
-        await advanceQueue();
-        // After advanceQueue sets currentSong and playState, attempt to force play again
+        await advanceQueue(); // remove finished, set next currentSong + playState
+        // small delay then force host player to load & play the new currentSong
         setTimeout(async () => {
           try {
-            // fetch currentSong from DB to ensure we have the latest
             const csSnap = await get(ref(db, `rooms/${id}/currentSong`));
             const cs = csSnap.val();
-            if (cs && cs.videoId && playerRef.current) {
-              playerRef.current.loadVideoById(cs.videoId);
-              playerRef.current.playVideo?.();
-            }
+            if (cs && cs.videoId) tryPlayWithRetries(cs.videoId, 4, 350);
           } catch (err) {
             console.warn("Error forcing play after advance:", err);
           }
@@ -306,6 +422,23 @@ export default function RoomPage() {
     startScoreSequence(score);
   };
 
+  const tryPlayWithRetries = (videoId, attempts = 4, delay = 350) => {
+    let tries = 0;
+    const attempt = () => {
+      tries++;
+      try {
+        if (playerRef.current && videoId) {
+          playerRef.current.loadVideoById(videoId);
+          playerRef.current.playVideo?.();
+        }
+      } catch (err) {
+        // ignore and retry
+      }
+      if (tries < attempts) setTimeout(attempt, delay);
+    };
+    attempt();
+  };
+
   if (!id) return null;
   if (isMobile) return <MobileControls roomId={id} />;
 
@@ -325,7 +458,11 @@ export default function RoomPage() {
             </div>
           </div>
         </div>
-        <HostControls roomId={id} onExitRedirect={() => router.push("/")} />
+        <HostControls
+          roomId={id}
+          onExitRedirect={() => router.push("/")}
+          onSkipNoScore={handleSkipNoScore}
+        />
       </header>
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
