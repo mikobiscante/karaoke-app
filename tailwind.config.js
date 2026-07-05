@@ -1,4 +1,4 @@
-/** @type {import('tailwindcss').Config} */
+// tailwind.config.js
 module.exports = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,5 +9,9 @@ module.exports = {
     "./**/*.{html,js,jsx,ts,tsx,mdx}",
   ],
   theme: { extend: {} },
+  safelist: [
+    // add any dynamic classes you generate at runtime, e.g.:
+    'bg-pink-500', 'bg-cyan-500', 'text-pink-400', 'text-cyan-400'
+  ],
   plugins: [],
 };
