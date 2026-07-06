@@ -98,6 +98,12 @@ export default function RoomPage() {
     };
   }, [id]);
 
+  // Write room marker on host mount so the room is discoverable for join validation
+  useEffect(() => {
+    if (!id || isMobile) return;
+    set(ref(db, `rooms/${id}/_createdAt`), Date.now()).catch(() => {});
+  }, [id, isMobile]);
+
   // Ensure player follows playState
   useEffect(() => {
     if (!playerRef.current) return;

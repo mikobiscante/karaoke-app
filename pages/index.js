@@ -1,5 +1,8 @@
 import { useRouter } from "next/router";
 import { v4 as uuidv4 } from "uuid";
+import { useState } from "react";
+import { ref, get } from "firebase/database";
+import { db } from "../utils/firebase";
 import {
   FaMobileAlt,
   FaClock,
@@ -11,15 +14,29 @@ import {
 
 export default function Home() {
   const router = useRouter();
+  const [joining, setJoining] = useState(false);
 
   const createRoom = () => {
     const roomId = uuidv4().slice(0, 8);
     router.push(`/room/${roomId}`);
   };
 
-  const joinRoom = () => {
+  const joinRoom = async () => {
     const code = prompt("Enter room code:");
-    if (code) router.push(`/room/${code}?mobile=true`);
+    if (!code) return;
+    setJoining(true);
+    try {
+      const snap = await get(ref(db, `rooms/${code}`));
+      if (!snap.exists()) {
+        alert(`Room "${code}" not found. Please check the code and try again.`);
+        return;
+      }
+      router.push(`/room/${code}?mobile=true`);
+    } catch {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setJoining(false);
+    }
   };
 
   return (
@@ -80,9 +97,10 @@ export default function Home() {
               <p className="text-sm text-gray-300 mb-4">Use your phone to join an existing session.</p>
               <button
                 onClick={joinRoom}
-                className="bg-pink-500 hover:bg-pink-400 text-black font-semibold px-5 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 hover:scale-105 shadow-lg"
+                disabled={joining}
+                className="bg-pink-500 hover:bg-pink-400 text-black font-semibold px-5 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Join Room <FaQrcode />
+                {joining ? "Checking..." : "Join Room"} <FaQrcode />
               </button>
             </div>
           </div>
