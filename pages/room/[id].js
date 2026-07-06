@@ -744,23 +744,19 @@ export default function RoomPage() {
           </div>
 
           <div className="mt-6 bg-white/6 p-4 rounded-xl text-center">
-            <h4 className="font-semibold mb-2">Welcome to Karaoke SingGing</h4>
-            <p className="text-sm text-gray-300 mb-3">
-              Guests can add songs and send reactions from their phones.
-            </p>
+            <p className="text-sm text-gray-300 mb-3">Scan to Add/Queue Songs</p>
             <div className="flex items-center justify-center">
               <QRCodeClient roomId={id} />
+            </div>
+            <div className="mt-3 text-xs text-gray-300">
+              <div>Buy me a coffee via GCash</div>
+              <div className="font-bold tracking-wider text-pink-200">09260560147</div>
             </div>
           </div>
         </aside>
       </main>
 
-      <footer className="w-full py-3 px-4">
-        <div className="w-full bg-white/6 p-3 rounded-xl text-center text-gray-300" style={{fontSize: 14}}>
-          <div className="mb-1">Buy me a coffee via GCash!</div>
-          <div className="font-bold tracking-wider text-pink-200">09260560147</div>
-        </div>
-      </footer>
+
     </div>
   );
 }
@@ -776,7 +772,7 @@ function QRCodeClient({ roomId }) {
         bgColor="#ffffff"
         fgColor="#111827"
       />
-      <div className="text-xs text-gray-300">Scan to join on mobile</div>
+      <div className="text-xs text-gray-300">Open on your phone</div>
     </div>
   );
 }
