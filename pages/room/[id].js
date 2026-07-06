@@ -754,6 +754,14 @@ export default function RoomPage() {
           </div>
         </aside>
       </main>
+
+      <footer className="w-full py-3 px-4">
+        <div className="max-w-4xl mx-auto bg-white/6 p-3 rounded-xl text-center text-xs text-gray-300">
+          <div className="font-semibold text-sm text-pink-300 mb-1">☕ Support the Project</div>
+          <div className="mb-1">Buy me a coffee via GCash!</div>
+          <div className="font-mono tracking-wider text-pink-200">09260560147</div>
+        </div>
+      </footer>
     </div>
   );
 }
