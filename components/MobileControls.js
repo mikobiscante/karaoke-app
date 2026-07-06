@@ -152,9 +152,9 @@ export default function MobileControls({ roomId }) {
             />
             <button
               onClick={() => search(query)}
-              className="bg-pink-500 hover:bg-pink-400 px-3 sm:px-4 py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition shrink-0"
+              className="bg-pink-500 hover:bg-pink-400 px-4 py-2 rounded-lg flex items-center gap-2 transition"
             >
-              <FaSearch /> {loadingSearch ? <span className="hidden sm:inline">...</span> : <span className="hidden sm:inline">Search</span>}
+              <FaSearch /> {loadingSearch ? "..." : "Search"}
             </button>
           </div>
         </div>
