@@ -56,3 +56,11 @@ rooms/{roomId}/
 - **Idle redirect:** both views redirect to `/` after 60 min of inactivity (only while paused)
 - **Player opts:** `autoplay: 0, controls: 1, modestbranding: 1, rel: 0`. Host uses `loadVideoById` + `playVideo()` with retry
 - **No `next.config.js`** — Next.js defaults
+
+## Responsive patterns
+
+- **Landing page:** single-column on mobile (`grid-cols-1`), switches to 2-column at `lg:` breakpoint
+- **Host room video section:** uses `flex-1 min-h-0` instead of hardcoded `calc()` — adapts to any header height
+- **HostControls:** buttons wrap with `flex-wrap`, compact padding/text on mobile via `text-xs`, `px-2`, `py-1.5` with `lg:` overrides
+- **MobileControls search results:** flex items use `min-w-0` on text wrapper + `shrink-0` on thumbnails/buttons + `break-words` on titles to prevent horizontal overflow. Results container uses `overflow-y-auto overflow-x-hidden`
+- **Score popover:** `width: 420px` with `max-width: 90%` and `85vw` on small screens

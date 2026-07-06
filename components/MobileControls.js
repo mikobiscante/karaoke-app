@@ -161,26 +161,26 @@ export default function MobileControls({ roomId }) {
 
         {/* Results */}
         {results.length > 0 && (
-          <div className="mb-4 bg-white/5 p-3 rounded-lg max-h-64 overflow-auto">
+          <div className="mb-4 bg-white/5 p-3 rounded-lg max-h-64 overflow-y-auto overflow-x-hidden">
             {results.map((r) => (
-              <div key={r.videoId} className="flex items-center gap-3 p-2 rounded hover:bg-white/8 transition">
-                <img src={r.thumbnail} alt="" className="w-20 h-12 rounded object-cover" />
-                <div className="flex-1">
-                  <div className="font-medium text-sm line-clamp-2 truncate">{r.title}</div>
-                  <div className="text-xs opacity-80">{r.channelTitle}</div>
+              <div key={r.videoId} className="flex items-center gap-2 p-2 rounded hover:bg-white/8 transition">
+                <img src={r.thumbnail} alt="" className="w-16 sm:w-20 h-10 sm:h-12 rounded object-cover shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-sm line-clamp-2 break-words">{r.title}</div>
+                  <div className="text-xs opacity-80 truncate">{r.channelTitle}</div>
                 </div>
 
                 {currentSong ? (
                   <button
                     onClick={() => handleQueue({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
-                    className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-xs flex items-center gap-1 shrink-0"
+                    className="bg-blue-500 hover:bg-blue-600 px-2 sm:px-3 py-1.5 rounded text-xs flex items-center gap-1 shrink-0"
                   >
                     <FaListUl /> <span className="hidden sm:inline">Queue</span>
                   </button>
                 ) : (
                   <button
                     onClick={() => handlePlayNow({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
-                    className="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-xs flex items-center gap-1 shrink-0"
+                    className="bg-green-500 hover:bg-green-600 px-2 sm:px-3 py-1.5 rounded text-xs flex items-center gap-1 shrink-0"
                   >
                     <FaPlay /> <span className="hidden sm:inline">Play</span>
                   </button>
