@@ -772,7 +772,7 @@ function QRCodeClient({ roomId }) {
         bgColor="#ffffff"
         fgColor="#111827"
       />
-      <div className="text-xs text-gray-300">Open on your phone</div>
+      <div className="text-xs text-gray-300">Scan to join on mobile</div>
     </div>
   );
 }
