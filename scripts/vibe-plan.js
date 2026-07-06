@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const PLANS_DIR = path.join(__dirname, '..', '.vibe', 'plan');
+const PLANS_DIR = path.join(__dirname, '..', 'plans');
 
 function slugify(str) {
   return str
@@ -80,7 +80,7 @@ function cmdList() {
     .reverse();
 
   if (files.length === 0) {
-    console.log('No plans found in .vibe/plan/');
+    console.log('No plans found in plans/');
     return;
   }
 
@@ -115,7 +115,7 @@ function cmdShow(search) {
   }
 
   if (!match) {
-    console.error(`No plan matching "${search}" found in .vibe/plan/`);
+    console.error(`No plan matching "${search}" found in plans/`);
     console.log('Available plans:');
     files.forEach(f => console.log(`  ${f}`));
     process.exit(1);

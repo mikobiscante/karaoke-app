@@ -57,9 +57,9 @@ rooms/{roomId}/
 - **Player opts:** `autoplay: 0, controls: 1, modestbranding: 1, rel: 0`. Host uses `loadVideoById` + `playVideo()` with retry
 - **No `next.config.js`** — Next.js defaults
 
-## .vibe/plan/ — Plan workflow
+## plans/ — Plan workflow
 
-Plans live in `.vibe/plan/` as consolidated markdown files. The CLI tool `scripts/vibe-plan.js` manages them.
+Plans live in `plans/` as consolidated markdown files. The CLI tool `scripts/vibe-plan.js` manages them.
 
 ### Commands
 
@@ -85,9 +85,9 @@ Each plan file contains:
 ### Agent workflow
 
 1. **Planning:** When asked to plan a feature, research it then save the consolidated plan using `node scripts/vibe-plan.js new "<title>"`. Fill in Objective, Steps, Files Affected, and Notes.
-2. **Execution:** In build mode, reference the plan file directly (e.g., `.vibe/plan/2026-07-07_something.md`) — the agent reads the file and follows each step, checking them off as it goes. Update the `**Status:**` header to "In Progress" then "Complete" as you work.
+2. **Execution:** In build mode, reference the plan file directly (e.g., `plans/2026-07-07_something.md`) — the agent reads the file and follows each step, checking them off as it goes. Update the `**Status:**` header to "In Progress" then "Complete" as you work.
 
-No plan should be created outside `.vibe/plan/`.
+No plan should be created outside `plans/`.
 
 ## Responsive patterns
 

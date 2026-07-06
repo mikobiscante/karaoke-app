@@ -23,15 +23,17 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-800 text-white flex flex-col items-center justify-center p-4 sm:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-800 text-white flex flex-col">
       {/* Header */}
-      <header className="w-full flex justify-between items-center mb-12">
-        <div className="flex items-center gap-3">
-          <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-10" />
-          <h1 className="text-2xl font-bold tracking-wide">Karaoke SingGing</h1>
+      <header className="w-full flex justify-between items-center gap-2 p-3 sm:px-8 sm:py-6 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-8 sm:h-10 shrink-0" />
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide">Karaoke SingGing</h1>
         </div>
-        <div className="text-sm font-semibold text-pink-400">💯 100% Free</div>
+        <div className="text-xs sm:text-sm font-semibold text-pink-400 shrink-0">💯 100% Free</div>
       </header>
+
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-8 pt-0">
 
       {/* Hero Section */}
       <section className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-center">
@@ -105,6 +107,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+    </main>
     </div>
   );
 }
