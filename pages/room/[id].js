@@ -47,6 +47,12 @@ export default function RoomPage() {
   const scoringTimeoutRef = useRef(null);
   const confettiRef = useRef(null);
 
+  // Mark room as recently active — used by cleanup API to decide if room is stale
+  const touchRoom = (roomId) => {
+    if (!roomId) return;
+    set(ref(db, `rooms/${roomId}/lastActiveAt`), Date.now()).catch(() => {});
+  };
+
   // Subscribe to Firebase nodes (queue, currentSong, playState) + mobile skip listener
   useEffect(() => {
     if (!id) return;
@@ -65,10 +71,12 @@ export default function RoomPage() {
       }));
       arr.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
       setQueue(arr);
+      touchRoom(id);
     });
-    const unsubP = onValue(pRef, (snap) =>
-      setPlayState(snap.val() || "paused"),
-    );
+    const unsubP = onValue(pRef, (snap) => {
+      setPlayState(snap.val() || "paused");
+      touchRoom(id);
+    });
 
     // mobile no-score skip listener
     const skipNoScoreRef = ref(db, `rooms/${id}/skipRequestNoScore`);
@@ -156,6 +164,7 @@ export default function RoomPage() {
 
     // reset timer (clears previous and starts a new one)
     const resetTimer = () => {
+      touchRoom(id);
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;
@@ -165,7 +174,8 @@ export default function RoomPage() {
       if (playState === "playing") return;
 
       timeoutId = setTimeout(() => {
-        // Redirect to main page when idle timeout fires
+        // Delete the room and redirect to landing page when idle timeout fires
+        remove(ref(db, `rooms/${id}`)).catch(() => {});
         try {
           router.push("/");
         } catch (err) {
@@ -209,6 +219,14 @@ export default function RoomPage() {
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [id, playState, router]);
+
+  // Redirect mobile users to landing page if room doesn't exist in Firebase
+  useEffect(() => {
+    if (!id || !isMobile) return;
+    get(ref(db, `rooms/${id}`)).then((snap) => {
+      if (!snap.exists()) router.push("/");
+    }).catch(() => router.push("/"));
+  }, [id, isMobile, router]);
 
   // Force host player to load & play whenever currentSong changes in Firebase
   useEffect(() => {

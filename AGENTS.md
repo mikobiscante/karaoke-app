@@ -44,6 +44,8 @@ rooms/{roomId}/
   currentSong     — { videoId, title, thumbnail } or null
   playState       — "playing" | "paused"
   skipRequestNoScore/ — { requestedAt: timestamp } (mobile writes, host reads)
+  _createdAt      — timestamp (written by host on room page mount)
+  lastActiveAt    — timestamp (updated on user interaction / Firebase writes via touchRoom())
 ```
 
 ## Conventions
@@ -53,7 +55,9 @@ rooms/{roomId}/
 - **Lazy client-only imports:** `MobileControls`, `HostControls`, `QRCodeCanvas` use `dynamic(() => import(...), { ssr: false })`
 - **Firebase Auth & Analytics:** never imported at module level; called via lazy `initAuth()`/`initAnalytics()` guarded by `typeof window === "undefined"`
 - **Scoring:** random 80–100 when YT video ends (state 0), DOM-based confetti (CSS animations, no library)
-- **Idle redirect:** both views redirect to `/` after 60 min of inactivity (only while paused)
+- **Idle redirect + cleanup:** both views redirect to `/` after 60 min of inactivity (only while paused). On idle timeout, the room is deleted from Firebase via `remove()`. A `touchRoom()` helper writes `lastActiveAt` on every user interaction + Firebase subscription change
+- **Room existence validation:** `pages/index.js` checks `get(ref(db, \`rooms/${code}\`))` before navigating joiners; mobile room page also validates existence on mount and redirects to `/` if not found
+- **Cleanup API:** `pages/api/cleanup.js` — POST endpoint (no auth) that iterates all rooms, skips playing rooms, and deletes rooms where `lastActiveAt` or `_createdAt` is > 1 hour old. Intended to be called by an external cron service (e.g., cron-job.org) every 15 min
 - **Player opts:** `autoplay: 0, controls: 1, modestbranding: 1, rel: 0`. Host uses `loadVideoById` + `playVideo()` with retry
 - **No `next.config.js`** — Next.js defaults
 
