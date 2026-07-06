@@ -104,10 +104,10 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center flex-wrap gap-2 lg:gap-3 justify-end">
       <button
         onClick={() => setPlayState("playing")}
-        className="bg-green-500 hover:bg-green-600 px-3 py-2 rounded"
+        className="bg-green-500 hover:bg-green-600 px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm rounded"
         disabled={busy}
       >
         Play
@@ -115,7 +115,7 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
 
       <button
         onClick={() => setPlayState("paused")}
-        className="bg-yellow-500 hover:bg-yellow-600 px-3 py-2 rounded"
+        className="bg-yellow-500 hover:bg-yellow-600 px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm rounded"
         disabled={busy}
       >
         Pause
@@ -123,7 +123,7 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
 
       <button
         onClick={handleSkip}
-        className="bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded"
+        className="bg-indigo-600 hover:bg-indigo-700 px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm rounded"
         disabled={busy}
       >
         Skip
@@ -131,7 +131,7 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
 
       <button
         onClick={clearQueue}
-        className="bg-gray-500 hover:bg-gray-600 px-3 py-2 rounded"
+        className="bg-gray-500 hover:bg-gray-600 px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm rounded"
         disabled={busy}
       >
         Clear Queue
@@ -139,7 +139,7 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
 
       <button
         onClick={exitRoom}
-        className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded"
+        className="bg-red-600 hover:bg-red-700 px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm rounded"
         disabled={busy}
       >
         Exit Room (Clear)

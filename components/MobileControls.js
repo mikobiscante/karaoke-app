@@ -136,9 +136,9 @@ export default function MobileControls({ roomId }) {
   };
 
   return (
-    <div className="min-h-screen p-4 bg-gradient-to-b from-indigo-950 via-purple-900 to-pink-800 text-white">
-      <div className="max-w-md mx-auto bg-white/6 backdrop-blur p-4 rounded-2xl shadow-xl">
-        <h2 className="text-xl font-bold mb-3 text-center">Karaoke SingGing</h2>
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-indigo-950 via-purple-900 to-pink-800 text-white">
+      <div className="max-w-md lg:max-w-lg mx-auto bg-white/6 backdrop-blur p-4 rounded-2xl shadow-xl">
+        <h2 className="text-xl lg:text-2xl font-bold mb-3 text-center">Karaoke SingGing</h2>
 
         {/* Search */}
         <div className="mb-4">
@@ -166,23 +166,23 @@ export default function MobileControls({ roomId }) {
               <div key={r.videoId} className="flex items-center gap-3 p-2 rounded hover:bg-white/8 transition">
                 <img src={r.thumbnail} alt="" className="w-20 h-12 rounded object-cover" />
                 <div className="flex-1">
-                  <div className="font-medium text-sm line-clamp-2">{r.title}</div>
+                  <div className="font-medium text-sm line-clamp-2 truncate">{r.title}</div>
                   <div className="text-xs opacity-80">{r.channelTitle}</div>
                 </div>
 
                 {currentSong ? (
                   <button
                     onClick={() => handleQueue({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
-                    className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-xs flex items-center gap-1"
+                    className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-xs flex items-center gap-1 shrink-0"
                   >
-                    <FaListUl /> Queue
+                    <FaListUl /> <span className="hidden sm:inline">Queue</span>
                   </button>
                 ) : (
                   <button
                     onClick={() => handlePlayNow({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
-                    className="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-xs flex items-center gap-1"
+                    className="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-xs flex items-center gap-1 shrink-0"
                   >
-                    <FaPlay /> Play
+                    <FaPlay /> <span className="hidden sm:inline">Play</span>
                   </button>
                 )}
               </div>
@@ -192,12 +192,12 @@ export default function MobileControls({ roomId }) {
 
         {/* Current Song Controls */}
         <div className="mb-4 bg-white/5 p-3 rounded-lg">
-          <div className="flex items-center justify-between mb-3">
-            <div>
+              <div className="flex items-center justify-between mb-3 gap-3">
+            <div className="min-w-0">
               <div className="text-sm text-gray-200">Now Playing</div>
-              <div className="font-medium">{currentSong ? currentSong.title : "No song playing"}</div>
+              <div className="font-medium truncate">{currentSong ? currentSong.title : "No song playing"}</div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {currentSong && (
                 <>
                   <button

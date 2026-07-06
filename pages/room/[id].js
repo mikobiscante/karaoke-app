@@ -572,10 +572,10 @@ export default function RoomPage() {
         />
       </header>
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 p-4 lg:p-6 min-h-0">
         {/* Video column */}
-        <section className="lg:col-span-9 col-span-1 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[calc(100vh-140px)] relative">
-          <div className="yt-wrapper flex-1">
+        <section className="lg:col-span-9 col-span-1 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-0 relative">
+          <div className="yt-wrapper flex-1 min-h-0">
             {currentSong ? (
               <YouTube
                 videoId={currentSong.videoId}
@@ -679,13 +679,13 @@ export default function RoomPage() {
         </section>
 
         {/* Sidebar */}
-        <aside className="lg:col-span-3 col-span-1 bg-black/50 rounded-3xl shadow-2xl p-6 flex flex-col justify-between">
+        <aside className="lg:col-span-3 col-span-1 bg-black/50 rounded-3xl shadow-2xl p-4 lg:p-6 flex flex-col justify-between">
           <div>
             <h3 className="text-pink-400 font-bold mb-3">▶ UP NEXT</h3>
             {queue.length === 0 ? (
               <p className="text-gray-400">No songs queued yet</p>
             ) : (
-              <ul className="space-y-3 max-h-[60vh] overflow-auto">
+              <ul className="space-y-3 max-h-[40vh] lg:max-h-[60vh] overflow-auto">
                 {queue.map((item) => (
                   <li
                     key={item.key}
@@ -694,7 +694,7 @@ export default function RoomPage() {
                     <img
                       src={item.thumbnail}
                       alt="thumb"
-                      className="w-20 h-12 rounded object-cover"
+                      className="w-16 lg:w-20 h-10 lg:h-12 rounded object-cover shrink-0"
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm line-clamp-2">
@@ -709,13 +709,13 @@ export default function RoomPage() {
           </div>
 
           <div
-            className="ad-container sidebar-ad"
-            style={{ width: 300, height: 100, marginTop: 12 }}
+            className="ad-container sidebar-ad w-full"
+            style={{ minHeight: 100, marginTop: 12 }}
           >
             <AdSlot
               client={ADS_CLIENT}
               slot={ADS_SLOT_SIDEBAR}
-              responsive={false}
+              responsive={true}
             />
           </div>
 

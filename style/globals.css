@@ -116,8 +116,12 @@ body {
 
 /* responsive tweaks for mobile */
 @media (max-width: 640px) {
-  .video-controls-bar { padding: 10px; gap: 8px; }
+  .video-controls-bar { padding: 10px; gap: 8px; flex-wrap: wrap; }
   .score-number { font-size: 44px; }
-  .score-popover { padding: 16px; }
+  .score-popover { padding: 16px; width: 85vw; }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+  .video-controls-bar { padding: 10px 14px; gap: 10px; }
 }
 
