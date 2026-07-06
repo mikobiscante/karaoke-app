@@ -57,6 +57,38 @@ rooms/{roomId}/
 - **Player opts:** `autoplay: 0, controls: 1, modestbranding: 1, rel: 0`. Host uses `loadVideoById` + `playVideo()` with retry
 - **No `next.config.js`** — Next.js defaults
 
+## .vibe/plan/ — Plan workflow
+
+Plans live in `.vibe/plan/` as consolidated markdown files. The CLI tool `scripts/vibe-plan.js` manages them.
+
+### Commands
+
+| Action | Command |
+|---|---|
+| Create a plan | `node scripts/vibe-plan.js new "Plan title"` |
+| List all plans | `node scripts/vibe-plan.js list` |
+| Show a plan | `node scripts/vibe-plan.js show <name>` |
+
+### Auto-naming
+
+Filenames are auto-generated as `<slugified-title>-YYYYMMDD.md`. If a duplicate exists, a counter is appended.
+
+### Plan format
+
+Each plan file contains:
+- **Title**, **Created** timestamp, **Status** (Draft / In Progress / Complete)
+- **Objective** — what the plan aims to achieve
+- **Steps** — checklist of actionable items
+- **Files Affected** — list of files to modify
+- **Notes** — relevant context, blockers, references
+
+### Agent workflow
+
+1. **Planning:** When asked to plan a feature, research it then save the consolidated plan using `node scripts/vibe-plan.js new "<title>"`. Fill in Objective, Steps, Files Affected, and Notes.
+2. **Execution:** In build mode, reference the plan file directly (e.g., `.vibe/plan/2026-07-07_something.md`) — the agent reads the file and follows each step, checking them off as it goes. Update the `**Status:**` header to "In Progress" then "Complete" as you work.
+
+No plan should be created outside `.vibe/plan/`.
+
 ## Responsive patterns
 
 - **Landing page:** single-column on mobile (`grid-cols-1`), switches to 2-column at `lg:` breakpoint
