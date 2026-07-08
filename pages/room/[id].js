@@ -661,7 +661,7 @@ export default function RoomPage() {
             ) : (
               <ul className="space-y-2">
                 {queue.map((item) => {
-                  const isCurrentSong = item.videoId === currentSong?.videoId;
+                  const isCurrentSong = item.key === queue[0]?.key;
                   return (
                     <li
                       key={item.key}
