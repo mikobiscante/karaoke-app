@@ -648,7 +648,7 @@ export default function RoomPage() {
         </section>
 
         {/* Sidebar */}
-        <aside className="lg:col-span-3 col-span-1 bg-black/50 rounded-3xl shadow-2xl p-3 lg:p-4 flex flex-col min-h-0">
+        <aside className="lg:col-span-3 col-span-1 bg-black/50 rounded-3xl shadow-2xl p-3 lg:p-4 flex flex-col min-h-0 lg:sticky lg:top-6 lg:self-start">
           <div className="flex-1 min-h-0 lg:overflow-y-auto">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-pink-400 font-bold">▶ UP NEXT</h3>
