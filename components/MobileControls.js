@@ -1,5 +1,5 @@
 // components/MobileControls.js
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import { ref, push, set, onValue, remove, get } from "firebase/database";
 import { db } from "../utils/firebase";
@@ -13,8 +13,12 @@ export default function MobileControls({ roomId }) {
   const [currentSong, setCurrentSong] = useState(null);
   const [playState, setPlayState] = useState("paused");
   const [loadingSearch, setLoadingSearch] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const idleTimerRef = useRef(null);
+  const suggestionsRef = useRef(null);
+  const debounceRef = useRef(null);
 
   useEffect(() => {
     if (!roomId) return;
@@ -84,6 +88,7 @@ export default function MobileControls({ roomId }) {
 
   const search = async (q) => {
     if (!q) return;
+    setShowSuggestions(false);
     setLoadingSearch(true);
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
@@ -95,6 +100,48 @@ export default function MobileControls({ roomId }) {
     } finally {
       setLoadingSearch(false);
     }
+  };
+
+  const fetchSuggestions = useCallback(async (q) => {
+    if (q.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const json = await res.json();
+      setSuggestions(json.items ? json.items.slice(0, 5) : []);
+      setShowSuggestions(true);
+    } catch {
+      setSuggestions([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (query.trim()) fetchSuggestions(query.trim());
+    }, 350);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query, fetchSuggestions]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectSuggestion = (item) => {
+    setQuery(item.title);
+    setShowSuggestions(false);
+    search(item.title);
   };
 
   const handleQueue = async (item) => {
@@ -141,7 +188,7 @@ export default function MobileControls({ roomId }) {
         <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-2 text-center">Karaoke SingGing</h2>
 
         {/* Search */}
-        <div className="mb-2">
+        <div className="mb-2 relative" ref={suggestionsRef}>
           <div className="flex gap-2">
             <input
               value={query}
@@ -152,11 +199,27 @@ export default function MobileControls({ roomId }) {
             />
             <button
               onClick={() => search(query)}
-              className="bg-pink-500 hover:bg-pink-400 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition text-xs sm:text-sm shrink-0 active:scale-95"
+              className="bg-pink-500 hover:bg-pink-400 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg flex items-center gap-1.5 sm:gap-2 transition text-sm sm:text-base shrink-0 active:scale-95"
             >
               <FaSearch /> {loadingSearch ? "..." : <span className="hidden sm:inline">Search</span>}
             </button>
           </div>
+
+          {/* Type-ahead suggestions */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-gray-900 border border-white/10 rounded-lg shadow-xl overflow-hidden">
+              {suggestions.map((s) => (
+                <button
+                  key={s.videoId}
+                  onClick={() => selectSuggestion(s)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/10 transition"
+                >
+                  <img src={s.thumbnail} alt="" className="w-10 h-7 rounded object-cover shrink-0" />
+                  <span className="truncate">{s.title}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Results */}
