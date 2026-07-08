@@ -283,6 +283,7 @@ export default function RoomPage() {
         title: next.title,
         thumbnail: next.thumbnail,
       });
+      await remove(ref(db, `rooms/${id}/queue/${next.key}`));
       await set(ref(db, `rooms/${id}/playState`), "playing");
     } else {
       await set(ref(db, `rooms/${id}/currentSong`), null);
@@ -482,6 +483,7 @@ export default function RoomPage() {
           title: next.title,
           thumbnail: next.thumbnail,
         });
+        await remove(ref(db, `rooms/${id}/queue/${next.key}`));
         await set(ref(db, `rooms/${id}/playState`), "playing");
       } else {
         // no next
