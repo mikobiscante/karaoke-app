@@ -136,12 +136,12 @@ export default function MobileControls({ roomId }) {
   };
 
   return (
-    <div className="min-h-screen p-3 sm:p-4 lg:p-6 bg-gradient-to-b from-indigo-950 via-purple-900 to-pink-800 text-white">
-      <div className="max-w-md lg:max-w-lg mx-auto bg-white/6 backdrop-blur p-3 sm:p-4 rounded-2xl shadow-xl">
+    <div className="min-h-screen p-2 sm:p-3 lg:p-4 bg-gradient-to-b from-indigo-950 via-purple-900 to-pink-800 text-white">
+      <div className="max-w-md lg:max-w-lg mx-auto bg-white/6 backdrop-blur p-2 sm:p-3 rounded-2xl shadow-xl">
         <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-2 text-center">Karaoke SingGing</h2>
 
         {/* Search */}
-        <div className="mb-3">
+        <div className="mb-2">
           <div className="flex gap-2">
             <input
               value={query}
@@ -161,9 +161,9 @@ export default function MobileControls({ roomId }) {
 
         {/* Results */}
         {results.length > 0 && (
-          <div className="mb-3 bg-white/5 p-2.5 sm:p-3 rounded-lg max-h-60 overflow-y-auto overflow-x-hidden">
+          <div className="mb-2 bg-white/5 p-2 sm:p-2.5 rounded-lg max-h-60 overflow-y-auto overflow-x-hidden">
             {results.map((r) => (
-              <div key={r.videoId} className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded hover:bg-white/8 transition">
+              <div key={r.videoId} className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded hover:bg-white/8 transition">
                 <img src={r.thumbnail} alt="" className="w-16 sm:w-20 h-10 sm:h-12 rounded object-cover shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="font-medium text-sm line-clamp-2 break-words">{r.title}</div>
@@ -191,8 +191,8 @@ export default function MobileControls({ roomId }) {
         )}
 
         {/* Current Song Controls */}
-        <div className="mb-3 bg-white/5 p-2.5 sm:p-3 rounded-lg">
-              <div className="flex items-center justify-between mb-3 gap-2 sm:gap-3">
+        <div className="mb-2 bg-white/5 p-2 sm:p-2.5 rounded-lg">
+              <div className="flex items-center justify-between mb-2 gap-2">
             <div className="min-w-0">
               <div className="text-sm text-gray-200">Now Playing</div>
               <div className="font-medium truncate">{currentSong ? currentSong.title : "No song playing"}</div>
@@ -202,14 +202,14 @@ export default function MobileControls({ roomId }) {
                 <>
                   <button
                     onClick={handlePausePlay}
-                    className="bg-yellow-500 hover:bg-yellow-600 p-2.5 sm:p-3 rounded-full text-black transition active:scale-95"
+                    className="bg-yellow-500 hover:bg-yellow-600 p-2 sm:p-2.5 rounded-full text-black transition active:scale-95"
                     aria-label="Pause/Play"
                   >
                     {playState === "playing" ? <FaPause /> : <FaPlay />}
                   </button>
                   <button
                     onClick={requestSkipNoScore}
-                    className="bg-indigo-600 hover:bg-indigo-700 p-2.5 sm:p-3 rounded-full text-white transition active:scale-95"
+                    className="bg-indigo-600 hover:bg-indigo-700 p-2 sm:p-2.5 rounded-full text-white transition active:scale-95"
                     aria-label="Skip"
                   >
                     <FaStepForward />
@@ -221,13 +221,13 @@ export default function MobileControls({ roomId }) {
 
           {/* Queue list */}
           <div>
-            <div className="text-sm text-gray-300 mb-2">Queue</div>
+            <div className="text-sm text-gray-300 mb-1.5">Queue</div>
             {queue.length === 0 ? (
               <div className="text-xs text-gray-400">No songs queued yet.</div>
             ) : (
               <ul className="space-y-2 max-h-40 overflow-auto">
                 {queue.map((v) => (
-                  <li key={v.key} className="flex items-center gap-2 sm:gap-3 bg-white/6 p-1.5 sm:p-2 rounded">
+                  <li key={v.key} className="flex items-center gap-1.5 sm:gap-2 bg-white/6 p-1 sm:p-1.5 rounded">
                     <img src={v.thumbnail} alt="" className="w-16 h-10 rounded object-cover" />
                     <div className="flex-1 text-sm line-clamp-2">{v.title}</div>
                   </li>
@@ -237,7 +237,7 @@ export default function MobileControls({ roomId }) {
           </div>
 
           {/* Buy me a coffee */}
-          <div className="border-t border-white/10 pt-3 mt-3 text-center text-gray-300" style={{fontSize: 13}}>
+          <div className="border-t border-white/10 pt-2 mt-2 text-center text-gray-300" style={{fontSize: 13}}>
             <div className="mb-0.5">Buy me a coffee via GCash!</div>
             <div className="font-bold tracking-wider text-pink-200">09260560147</div>
           </div>

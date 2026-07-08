@@ -53,18 +53,18 @@ export default function Home() {
       <main className="flex-1 flex items-center justify-center p-4 sm:p-8 pt-0">
 
       {/* Hero Section */}
-      <section className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-center">
+      <section className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
         {/* Left Text */}
         <div>
           <h2 className="text-3xl sm:text-4xl xl:text-5xl font-extrabold leading-tight mb-4 drop-shadow-lg">
             QUEUE KARAOKE SONGS FROM <span className="text-pink-500">ANY PHONE</span>.
           </h2>
-          <p className="text-lg text-gray-200 mb-6">
+          <p className="text-lg text-gray-200 mb-4">
             Guests scan a room code, search songs, and add them instantly. The host controls playback on this screen.
           </p>
 
           {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-300 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-300 mb-6">
             <div className="flex items-center gap-2">
               <FaMobileAlt className="text-pink-400" /> No App Required
             </div>
@@ -80,10 +80,10 @@ export default function Home() {
           </div>
 
           {/* Action Panels */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-indigo-900/60 to-purple-800/60 rounded-xl p-4 sm:p-6 shadow-xl border border-indigo-700 hover:shadow-pink-500/40 transition-all duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-gradient-to-br from-indigo-900/60 to-purple-800/60 rounded-xl p-3 sm:p-4 shadow-xl border border-indigo-700 hover:shadow-pink-500/40 transition-all duration-300">
               <h3 className="text-xl font-bold mb-2">HOST THE ROOM</h3>
-              <p className="text-sm text-gray-300 mb-4">Create a room and display the queue on your TV.</p>
+              <p className="text-sm text-gray-300 mb-3">Create a room and display the queue on your TV.</p>
               <button
                 onClick={createRoom}
                 className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold px-5 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 hover:scale-105 shadow-lg"
@@ -92,9 +92,9 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="bg-gradient-to-br from-pink-900/60 to-purple-800/60 rounded-xl p-4 sm:p-6 shadow-xl border border-pink-700 hover:shadow-cyan-500/40 transition-all duration-300">
+            <div className="bg-gradient-to-br from-pink-900/60 to-purple-800/60 rounded-xl p-3 sm:p-4 shadow-xl border border-pink-700 hover:shadow-cyan-500/40 transition-all duration-300">
               <h3 className="text-xl font-bold mb-2">JOIN THE ROOM</h3>
-              <p className="text-sm text-gray-300 mb-4">Use your phone to join an existing session.</p>
+              <p className="text-sm text-gray-300 mb-3">Use your phone to join an existing session.</p>
               <button
                 onClick={joinRoom}
                 disabled={joining}
@@ -107,9 +107,9 @@ export default function Home() {
         </div>
 
         {/* Right Visual */}
-        <div className="bg-black/40 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col justify-between hover:shadow-pink-500/30 transition-all duration-300">
-          <h3 className="text-pink-400 font-bold mb-4">HOW IT WORKS</h3>
-          <ul className="space-y-4 text-sm text-gray-300">
+        <div className="bg-black/40 rounded-3xl p-3 sm:p-4 shadow-2xl flex flex-col justify-between hover:shadow-pink-500/30 transition-all duration-300">
+          <h3 className="text-pink-400 font-bold mb-3">HOW IT WORKS</h3>
+          <ul className="space-y-3 text-sm text-gray-300">
             <li>
               <span className="font-semibold text-cyan-400">1. Scan or Enter Code →</span> Guests scan the QR or enter the room code on their phones.
             </li>
@@ -120,7 +120,7 @@ export default function Home() {
               <span className="font-semibold text-pink-400">3. Sing Together →</span> The host controls playback for everyone on this screen.
             </li>
           </ul>
-          <div className="mt-8 text-xs text-gray-400 text-center">
+          <div className="mt-6 text-xs text-gray-400 text-center">
             Karaoke SingGing v1.0 — 100% Free
           </div>
         </div>

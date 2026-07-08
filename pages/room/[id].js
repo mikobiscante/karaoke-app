@@ -518,7 +518,7 @@ export default function RoomPage() {
         />
       </header>
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6 p-3 lg:p-6 min-h-0">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 p-2 lg:p-4 min-h-0">
         {/* Video column */}
         <section className="lg:col-span-9 col-span-1 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-0 max-lg:min-h-[45vh] relative lg:sticky lg:top-6">
           <div className="yt-wrapper flex-1 min-h-0">
@@ -626,7 +626,7 @@ export default function RoomPage() {
         </section>
 
         {/* Sidebar */}
-        <aside className="lg:col-span-3 col-span-1 bg-black/50 rounded-3xl shadow-2xl p-4 lg:p-6 flex flex-col min-h-0">
+        <aside className="lg:col-span-3 col-span-1 bg-black/50 rounded-3xl shadow-2xl p-3 lg:p-4 flex flex-col min-h-0">
           <div className="flex-1 min-h-0 overflow-y-auto">
             <h3 className="text-pink-400 font-bold mb-2">▶ UP NEXT</h3>
             {queue.length === 0 ? (
@@ -636,7 +636,7 @@ export default function RoomPage() {
                 {queue.map((item) => (
                   <li
                     key={item.key}
-                    className="flex items-center gap-2 sm:gap-3 bg-white/6 p-1.5 sm:p-2 rounded-lg"
+                    className="flex items-center gap-1.5 sm:gap-2 bg-white/6 p-1 sm:p-1.5 rounded-lg"
                   >
                     <img
                       src={item.thumbnail}
@@ -666,12 +666,12 @@ export default function RoomPage() {
             />
           </div>
 
-          <div className="bg-white/6 p-3 sm:p-4 rounded-xl text-center shrink-0">
-            <p className="text-sm text-gray-300 mb-3">Scan to Add/Queue Songs</p>
+          <div className="bg-white/6 p-2 sm:p-3 rounded-xl text-center shrink-0">
+            <p className="text-sm text-gray-300 mb-2">Scan to Add/Queue Songs</p>
             <div className="flex items-center justify-center">
               <QRCodeClient roomId={id} />
             </div>
-            <div className="mt-3 text-xs text-gray-300">
+            <div className="mt-2 text-xs text-gray-300">
               <div>Buy me a coffee via GCash</div>
               <div className="font-bold tracking-wider text-pink-200">09260560147</div>
             </div>
