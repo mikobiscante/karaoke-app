@@ -520,7 +520,7 @@ export default function RoomPage() {
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 p-4 lg:p-6 min-h-0">
         {/* Video column */}
-        <section className="lg:col-span-9 col-span-1 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-0 relative">
+        <section className="lg:col-span-9 col-span-1 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-0 relative lg:sticky lg:top-6">
           <div className="yt-wrapper flex-1 min-h-0">
             {currentSong ? (
               <YouTube
@@ -626,28 +626,28 @@ export default function RoomPage() {
         </section>
 
         {/* Sidebar */}
-        <aside className="lg:col-span-3 col-span-1 bg-black/50 rounded-3xl shadow-2xl p-4 lg:p-6 flex flex-col justify-between">
-          <div>
-            <h3 className="text-pink-400 font-bold mb-3">▶ UP NEXT</h3>
+        <aside className="lg:col-span-3 col-span-1 bg-black/50 rounded-3xl shadow-2xl p-4 lg:p-6 flex flex-col min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <h3 className="text-pink-400 font-bold mb-2">▶ UP NEXT</h3>
             {queue.length === 0 ? (
-              <p className="text-gray-400">No songs queued yet</p>
+              <p className="text-gray-400 text-sm">No songs queued yet</p>
             ) : (
-              <ul className="space-y-3 max-h-[40vh] lg:max-h-[60vh] overflow-auto">
+              <ul className="space-y-2">
                 {queue.map((item) => (
                   <li
                     key={item.key}
-                    className="flex items-center gap-3 bg-white/6 p-2 rounded-lg"
+                    className="flex items-center gap-2 sm:gap-3 bg-white/6 p-1.5 sm:p-2 rounded-lg"
                   >
                     <img
                       src={item.thumbnail}
                       alt="thumb"
                       className="w-16 lg:w-20 h-10 lg:h-12 rounded object-cover shrink-0"
                     />
-                    <div className="flex-1">
-                      <div className="font-medium text-sm line-clamp-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm line-clamp-2 break-words">
                         {item.title}
                       </div>
-                      <div className="text-xs opacity-80">Queued by guest</div>
+                      <div className="text-xs opacity-80 truncate">Queued by guest</div>
                     </div>
                   </li>
                 ))}
@@ -656,8 +656,8 @@ export default function RoomPage() {
           </div>
 
           <div
-            className="ad-container sidebar-ad w-full"
-            style={{ minHeight: 100, marginTop: 12 }}
+            className="ad-container sidebar-ad w-full shrink-0"
+            style={{ minHeight: 100 }}
           >
             <AdSlot
               client={ADS_CLIENT}
@@ -666,7 +666,7 @@ export default function RoomPage() {
             />
           </div>
 
-          <div className="mt-6 bg-white/6 p-4 rounded-xl text-center">
+          <div className="bg-white/6 p-3 sm:p-4 rounded-xl text-center shrink-0">
             <p className="text-sm text-gray-300 mb-3">Scan to Add/Queue Songs</p>
             <div className="flex items-center justify-center">
               <QRCodeClient roomId={id} />

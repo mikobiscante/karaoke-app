@@ -81,7 +81,7 @@ export default function Home() {
 
           {/* Action Panels */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-indigo-900/60 to-purple-800/60 rounded-xl p-6 shadow-xl border border-indigo-700 hover:shadow-pink-500/40 transition-all duration-300">
+            <div className="bg-gradient-to-br from-indigo-900/60 to-purple-800/60 rounded-xl p-4 sm:p-6 shadow-xl border border-indigo-700 hover:shadow-pink-500/40 transition-all duration-300">
               <h3 className="text-xl font-bold mb-2">HOST THE ROOM</h3>
               <p className="text-sm text-gray-300 mb-4">Create a room and display the queue on your TV.</p>
               <button
@@ -92,7 +92,7 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="bg-gradient-to-br from-pink-900/60 to-purple-800/60 rounded-xl p-6 shadow-xl border border-pink-700 hover:shadow-cyan-500/40 transition-all duration-300">
+            <div className="bg-gradient-to-br from-pink-900/60 to-purple-800/60 rounded-xl p-4 sm:p-6 shadow-xl border border-pink-700 hover:shadow-cyan-500/40 transition-all duration-300">
               <h3 className="text-xl font-bold mb-2">JOIN THE ROOM</h3>
               <p className="text-sm text-gray-300 mb-4">Use your phone to join an existing session.</p>
               <button
@@ -107,7 +107,7 @@ export default function Home() {
         </div>
 
         {/* Right Visual */}
-        <div className="bg-black/40 rounded-3xl p-6 shadow-2xl flex flex-col justify-between hover:shadow-pink-500/30 transition-all duration-300">
+        <div className="bg-black/40 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col justify-between hover:shadow-pink-500/30 transition-all duration-300">
           <h3 className="text-pink-400 font-bold mb-4">HOW IT WORKS</h3>
           <ul className="space-y-4 text-sm text-gray-300">
             <li>
