@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { ref, onValue, set, remove, get } from "firebase/database";
 import { db } from "../../utils/firebase";
 import YouTube from "react-youtube";
-import { FaPlay, FaPause, FaStepForward, FaListUl } from "react-icons/fa";
+import { FaPlay, FaPause, FaStepForward, FaListUl, FaBars, FaTimes } from "react-icons/fa";
 
 // top of file or component
 import AdSlot from "../../components/AdSlot";
@@ -41,6 +41,7 @@ export default function RoomPage() {
   const [showScore, setShowScore] = useState(false);
   const [displayScore, setDisplayScore] = useState(0);
   const [finalScore, setFinalScore] = useState(0);
+  const [showMobileControls, setShowMobileControls] = useState(false);
 
   const playerRef = useRef(null);
   const scoreAnimRef = useRef(null);
@@ -497,25 +498,46 @@ export default function RoomPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-800 text-white">
-      <header className="flex items-center justify-between px-4 lg:px-6 py-2 lg:py-4 bg-black/30 backdrop-blur">
-        <div className="flex items-center gap-3">
+      <header className="relative flex items-center justify-between px-3 lg:px-6 py-1.5 lg:py-4 bg-black/30 backdrop-blur lg:rounded-none rounded-full mx-2 mt-2 lg:mx-0 lg:mt-0 z-40">
+        <div className="flex items-center gap-2 lg:gap-3">
           <img
             src="/logo-singging.png"
             alt="Karaoke SingGing"
-            className="h-10"
+            className="h-8 lg:h-10"
           />
-          <div>
+          <div className="hidden lg:block">
             <div className="text-lg font-bold">Karaoke SingGing</div>
-            <div className="text-xs text-gray-300">
-              ROOM — <span className="font-mono">{id}</span>
-            </div>
           </div>
+          <span className="text-xs font-mono bg-white/10 px-2 py-0.5 rounded-full">
+            ROOM — {id}
+          </span>
         </div>
-        <HostControls
-          roomId={id}
-          onExitRedirect={() => router.push("/")}
-          onSkipNoScore={handleSkipNoScore}
-        />
+
+        <button
+          className="lg:hidden p-2 text-white hover:bg-white/10 rounded-full transition"
+          onClick={() => setShowMobileControls((prev) => !prev)}
+          aria-label="Toggle controls"
+        >
+          {showMobileControls ? <FaTimes size={18} /> : <FaBars size={18} />}
+        </button>
+
+        <div className="hidden lg:block">
+          <HostControls
+            roomId={id}
+            onExitRedirect={() => router.push("/")}
+            onSkipNoScore={handleSkipNoScore}
+          />
+        </div>
+
+        {showMobileControls && (
+          <div className="absolute top-full right-0 lg:hidden mt-2 bg-gray-900/95 backdrop-blur rounded-xl p-3 shadow-xl z-50 min-w-[200px]">
+            <HostControls
+              roomId={id}
+              onExitRedirect={() => router.push("/")}
+              onSkipNoScore={handleSkipNoScore}
+            />
+          </div>
+        )}
       </header>
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 p-2 lg:p-4 min-h-0">

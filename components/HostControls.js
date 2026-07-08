@@ -81,16 +81,6 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
     await localSkipNoScore();
   };
 
-  const clearQueue = async () => {
-    if (!roomId) return;
-    setBusy(true);
-    try {
-      await set(ref(db, `rooms/${roomId}/queue`), null);
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const exitRoom = async () => {
     if (!roomId) return;
     if (!confirm("Exit room and clear data?")) return;
@@ -127,14 +117,6 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
         disabled={busy}
       >
         Skip
-      </button>
-
-      <button
-        onClick={clearQueue}
-        className="bg-gray-500 hover:bg-gray-600 px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm rounded"
-        disabled={busy}
-      >
-        Clear Queue
       </button>
 
       <button
