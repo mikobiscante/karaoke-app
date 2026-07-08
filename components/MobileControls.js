@@ -142,12 +142,18 @@ export default function MobileControls({ roomId }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleSearch = (q) => {
+    if (!q) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    search(q);
+  };
+
   const selectSuggestion = (text) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setQuery(text);
-    setShowSuggestions(false);
-    setSuggestions([]);
-    search(text);
+    handleSearch(text);
   };
 
   const handleQueue = async (item) => {
@@ -199,12 +205,12 @@ export default function MobileControls({ roomId }) {
             <input
               value={query}
               onChange={handleQueryChange}
-              onKeyDown={(e) => { if (e.key === "Enter") search(query); }}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSearch(query); }}
               placeholder="Search YouTube karaoke..."
               className="flex-1 px-3 py-2 rounded-lg text-black"
             />
             <button
-              onClick={() => search(query)}
+              onClick={() => handleSearch(query)}
               className="bg-pink-500 hover:bg-pink-400 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg flex items-center gap-1.5 sm:gap-2 transition text-sm sm:text-base shrink-0 active:scale-95"
             >
               <FaSearch /> {loadingSearch ? "..." : <span className="hidden sm:inline">Search</span>}
