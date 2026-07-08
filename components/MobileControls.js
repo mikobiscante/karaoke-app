@@ -118,15 +118,19 @@ export default function MobileControls({ roomId }) {
     }
   }, []);
 
-  useEffect(() => {
+  const handleQueryChange = (e) => {
+    const val = e.target.value;
+    setQuery(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      if (query.trim()) fetchSuggestions(query.trim());
-    }, 350);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [query, fetchSuggestions]);
+    if (val.trim().length >= 2) {
+      debounceRef.current = setTimeout(() => {
+        fetchSuggestions(val.trim());
+      }, 350);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -139,8 +143,10 @@ export default function MobileControls({ roomId }) {
   }, []);
 
   const selectSuggestion = (text) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setQuery(text);
     setShowSuggestions(false);
+    setSuggestions([]);
     search(text);
   };
 
@@ -192,7 +198,7 @@ export default function MobileControls({ roomId }) {
           <div className="flex gap-2">
             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={handleQueryChange}
               onKeyDown={(e) => { if (e.key === "Enter") search(query); }}
               placeholder="Search YouTube karaoke..."
               className="flex-1 px-3 py-2 rounded-lg text-black"
