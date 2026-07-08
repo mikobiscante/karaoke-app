@@ -113,3 +113,8 @@ No plan should be created outside `plans/`.
 - **Objective:** Optimize spacing and UX in `components/MobileControls.js` to maximize usable screen real estate on mobile devices and improve tactile interaction feedback
 - **Files Affected:** `components/MobileControls.js`
 - **Notes:** Reduced container/card/button padding, tightened section gaps and title margins, compacted result/queue items, added `active:scale-95` tactile feedback to all interactive buttons, and moved the coffee footer inside the card with a `border-t` divider. On a 375px phone, ~16px of horizontal padding was reclaimed (~5% more content width).
+
+### 2026-07-08 — YouTube Player in Mobile View
+- **Objective:** Add a YouTube video player to the mobile view so users can watch songs while controlling them from their phone
+- **Files Affected:** `components/MobileControls.js`
+- **Notes:** Added `YouTube` (react-youtube) import, `playerRef`, two `useEffect` blocks (playState sync + currentSong load), and a responsive `aspect-video` player div rendered conditionally at the top of the card when `currentSong` is set. Player uses `playsinline: 1` for iOS compatibility, matching host player opts. Build compiles cleanly.
