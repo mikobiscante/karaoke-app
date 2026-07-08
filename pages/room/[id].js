@@ -540,9 +540,9 @@ export default function RoomPage() {
         )}
       </header>
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-1 gap-2 lg:gap-4 p-2 lg:p-4 min-h-0 lg:h-[calc(100vh-72px)] lg:overflow-hidden">
+      <main className="flex-1 flex flex-col lg:flex-row gap-2 lg:gap-4 p-2 lg:p-4 min-h-0 lg:overflow-hidden">
         {/* Video column */}
-        <section className="lg:col-span-9 col-span-1 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-0 max-lg:min-h-[45vh] relative">
+        <section className="lg:flex-[9] lg:min-w-0 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-0 max-lg:min-h-[45vh] relative">
           <div className="yt-wrapper flex-1 min-h-0">
             {currentSong ? (
               <YouTube
@@ -648,7 +648,7 @@ export default function RoomPage() {
         </section>
 
         {/* Sidebar */}
-        <aside className="lg:col-span-3 col-span-1 bg-black/50 rounded-3xl shadow-2xl p-3 lg:p-4 flex flex-col min-h-0">
+        <aside className="lg:flex-[3] lg:min-w-0 bg-black/50 rounded-3xl shadow-2xl p-3 lg:p-4 flex flex-col min-h-0">
           <div className="flex-1 min-h-0 lg:overflow-y-auto">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-pink-400 font-bold">▶ UP NEXT</h3>
