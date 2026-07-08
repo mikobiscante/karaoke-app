@@ -649,30 +649,44 @@ export default function RoomPage() {
 
         {/* Sidebar */}
         <aside className="lg:col-span-3 col-span-1 bg-black/50 rounded-3xl shadow-2xl p-3 lg:p-4 flex flex-col min-h-0">
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <h3 className="text-pink-400 font-bold mb-2">▶ UP NEXT</h3>
+          <div className="flex-1 min-h-0 lg:overflow-y-auto">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-pink-400 font-bold">▶ UP NEXT</h3>
+              {queue.length > 0 && (
+                <span className="text-xs bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full font-medium">{queue.length}</span>
+              )}
+            </div>
             {queue.length === 0 ? (
               <p className="text-gray-400 text-sm">No songs queued yet</p>
             ) : (
               <ul className="space-y-2">
-                {queue.map((item) => (
-                  <li
-                    key={item.key}
-                    className="flex items-center gap-1.5 sm:gap-2 bg-white/6 p-1 sm:p-1.5 rounded-lg"
-                  >
-                    <img
-                      src={item.thumbnail}
-                      alt="thumb"
-                      className="w-16 lg:w-20 h-10 lg:h-12 rounded object-cover shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm line-clamp-2 break-words">
-                        {item.title}
+                {queue.map((item) => {
+                  const isCurrentSong = item.videoId === currentSong?.videoId;
+                  return (
+                    <li
+                      key={item.key}
+                      className={`flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 rounded-lg ${
+                        isCurrentSong
+                          ? "bg-pink-600/20 ring-1 ring-pink-400/50"
+                          : "bg-white/6"
+                      }`}
+                    >
+                      <img
+                        src={item.thumbnail}
+                        alt="thumb"
+                        className="w-16 lg:w-20 h-10 lg:h-12 rounded object-cover shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm line-clamp-2 break-words">
+                          {item.title}
+                        </div>
+                        <div className={`text-xs truncate ${isCurrentSong ? "text-pink-300 font-medium" : "opacity-80"}`}>
+                          {isCurrentSong ? "♪ Now Playing" : "Queued by guest"}
+                        </div>
                       </div>
-                      <div className="text-xs opacity-80 truncate">Queued by guest</div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
