@@ -136,12 +136,12 @@ export default function MobileControls({ roomId }) {
   };
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-indigo-950 via-purple-900 to-pink-800 text-white">
-      <div className="max-w-md lg:max-w-lg mx-auto bg-white/6 backdrop-blur p-4 rounded-2xl shadow-xl">
-        <h2 className="text-xl lg:text-2xl font-bold mb-3 text-center">Karaoke SingGing</h2>
+    <div className="min-h-screen p-3 sm:p-4 lg:p-6 bg-gradient-to-b from-indigo-950 via-purple-900 to-pink-800 text-white">
+      <div className="max-w-md lg:max-w-lg mx-auto bg-white/6 backdrop-blur p-3 sm:p-4 rounded-2xl shadow-xl">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-2 text-center">Karaoke SingGing</h2>
 
         {/* Search */}
-        <div className="mb-4">
+        <div className="mb-3">
           <div className="flex gap-2">
             <input
               value={query}
@@ -152,7 +152,7 @@ export default function MobileControls({ roomId }) {
             />
             <button
               onClick={() => search(query)}
-              className="bg-pink-500 hover:bg-pink-400 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition text-xs sm:text-sm shrink-0"
+              className="bg-pink-500 hover:bg-pink-400 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition text-xs sm:text-sm shrink-0 active:scale-95"
             >
               <FaSearch /> {loadingSearch ? "..." : <span className="hidden sm:inline">Search</span>}
             </button>
@@ -161,9 +161,9 @@ export default function MobileControls({ roomId }) {
 
         {/* Results */}
         {results.length > 0 && (
-          <div className="mb-4 bg-white/5 p-3 rounded-lg max-h-64 overflow-y-auto overflow-x-hidden">
+          <div className="mb-3 bg-white/5 p-2.5 sm:p-3 rounded-lg max-h-60 overflow-y-auto overflow-x-hidden">
             {results.map((r) => (
-              <div key={r.videoId} className="flex items-center gap-2 p-2 rounded hover:bg-white/8 transition">
+              <div key={r.videoId} className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded hover:bg-white/8 transition">
                 <img src={r.thumbnail} alt="" className="w-16 sm:w-20 h-10 sm:h-12 rounded object-cover shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="font-medium text-sm line-clamp-2 break-words">{r.title}</div>
@@ -173,14 +173,14 @@ export default function MobileControls({ roomId }) {
                 {currentSong ? (
                   <button
                     onClick={() => handleQueue({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
-                    className="bg-blue-500 hover:bg-blue-600 px-2 sm:px-3 py-1.5 rounded text-xs flex items-center gap-1 shrink-0"
+                    className="bg-blue-500 hover:bg-blue-600 px-2 sm:px-3 py-1.5 rounded text-xs flex items-center gap-1 shrink-0 transition active:scale-95"
                   >
                     <FaListUl /> <span className="hidden sm:inline">Queue</span>
                   </button>
                 ) : (
                   <button
                     onClick={() => handlePlayNow({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
-                    className="bg-green-500 hover:bg-green-600 px-2 sm:px-3 py-1.5 rounded text-xs flex items-center gap-1 shrink-0"
+                    className="bg-green-500 hover:bg-green-600 px-2 sm:px-3 py-1.5 rounded text-xs flex items-center gap-1 shrink-0 transition active:scale-95"
                   >
                     <FaPlay /> <span className="hidden sm:inline">Play</span>
                   </button>
@@ -191,8 +191,8 @@ export default function MobileControls({ roomId }) {
         )}
 
         {/* Current Song Controls */}
-        <div className="mb-4 bg-white/5 p-3 rounded-lg">
-              <div className="flex items-center justify-between mb-3 gap-3">
+        <div className="mb-3 bg-white/5 p-2.5 sm:p-3 rounded-lg">
+              <div className="flex items-center justify-between mb-3 gap-2 sm:gap-3">
             <div className="min-w-0">
               <div className="text-sm text-gray-200">Now Playing</div>
               <div className="font-medium truncate">{currentSong ? currentSong.title : "No song playing"}</div>
@@ -202,14 +202,14 @@ export default function MobileControls({ roomId }) {
                 <>
                   <button
                     onClick={handlePausePlay}
-                    className="bg-yellow-500 hover:bg-yellow-600 p-3 rounded-full text-black"
+                    className="bg-yellow-500 hover:bg-yellow-600 p-2.5 sm:p-3 rounded-full text-black transition active:scale-95"
                     aria-label="Pause/Play"
                   >
                     {playState === "playing" ? <FaPause /> : <FaPlay />}
                   </button>
                   <button
                     onClick={requestSkipNoScore}
-                    className="bg-indigo-600 hover:bg-indigo-700 p-3 rounded-full text-white"
+                    className="bg-indigo-600 hover:bg-indigo-700 p-2.5 sm:p-3 rounded-full text-white transition active:scale-95"
                     aria-label="Skip"
                   >
                     <FaStepForward />
@@ -227,7 +227,7 @@ export default function MobileControls({ roomId }) {
             ) : (
               <ul className="space-y-2 max-h-40 overflow-auto">
                 {queue.map((v) => (
-                  <li key={v.key} className="flex items-center gap-3 bg-white/6 p-2 rounded">
+                  <li key={v.key} className="flex items-center gap-2 sm:gap-3 bg-white/6 p-1.5 sm:p-2 rounded">
                     <img src={v.thumbnail} alt="" className="w-16 h-10 rounded object-cover" />
                     <div className="flex-1 text-sm line-clamp-2">{v.title}</div>
                   </li>
@@ -235,12 +235,13 @@ export default function MobileControls({ roomId }) {
               </ul>
             )}
           </div>
-        </div>
-      </div>
 
-      <div className="mt-4 w-full bg-white/6 p-3 rounded-xl text-center text-gray-300" style={{fontSize: 14}}>
-        <div className="mb-1">Buy me a coffee via GCash!</div>
-        <div className="font-bold tracking-wider text-pink-200">09260560147</div>
+          {/* Buy me a coffee */}
+          <div className="border-t border-white/10 pt-3 mt-3 text-center text-gray-300" style={{fontSize: 13}}>
+            <div className="mb-0.5">Buy me a coffee via GCash!</div>
+            <div className="font-bold tracking-wider text-pink-200">09260560147</div>
+          </div>
+        </div>
       </div>
     </div>
   );

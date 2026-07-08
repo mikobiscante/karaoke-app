@@ -108,3 +108,8 @@ No plan should be created outside `plans/`.
 - **Objective:** Fix Safari browser autoplay issue when skipping/advancing songs by removing duplicate effects and manual retry logic
 - **Files Affected:** `pages/room/[id].js`
 - **Notes:** Consolidated to a single `useEffect` with `loadVideoById`, 500ms fallback, and `playsinline: 1` for iOS Safari. Removed 3 duplicate effects and all manual `setTimeout` + `tryPlayWithRetries` calls in `advanceQueue()`, `handleSkipNoScore()`, and `startScoreSequence()`.
+
+### 2026-07-08 — MobileControls UI Optimization
+- **Objective:** Optimize spacing and UX in `components/MobileControls.js` to maximize usable screen real estate on mobile devices and improve tactile interaction feedback
+- **Files Affected:** `components/MobileControls.js`
+- **Notes:** Reduced container/card/button padding, tightened section gaps and title margins, compacted result/queue items, added `active:scale-95` tactile feedback to all interactive buttons, and moved the coffee footer inside the card with a `border-t` divider. On a 375px phone, ~16px of horizontal padding was reclaimed (~5% more content width).
