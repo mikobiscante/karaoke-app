@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import { ref, push, set, onValue, remove, get } from "firebase/database";
 import { db } from "../utils/firebase";
 import { FaPlay, FaPause, FaStepForward, FaListUl, FaSearch } from "react-icons/fa";
-import YouTube from "react-youtube";
 
 export default function MobileControls({ roomId }) {
   const router = useRouter();
@@ -16,7 +15,6 @@ export default function MobileControls({ roomId }) {
   const [loadingSearch, setLoadingSearch] = useState(false);
 
   const idleTimerRef = useRef(null);
-  const playerRef = useRef(null);
 
   useEffect(() => {
     if (!roomId) return;
@@ -84,30 +82,6 @@ export default function MobileControls({ roomId }) {
     };
   }, [roomId, playState, router]);
 
-  // Sync playState to the YouTube player
-  useEffect(() => {
-    if (!playerRef.current) return;
-    try {
-      if (playState === "playing") playerRef.current.playVideo?.();
-      else playerRef.current.pauseVideo?.();
-    } catch {}
-  }, [playState]);
-
-  // Load new video when currentSong changes and attempt autoplay
-  useEffect(() => {
-    if (!playerRef.current) return;
-    if (!currentSong) {
-      try { playerRef.current.stopVideo?.(); } catch {}
-      return;
-    }
-    try {
-      playerRef.current.loadVideoById(currentSong.videoId);
-      setTimeout(() => {
-        try { playerRef.current.playVideo?.(); } catch {}
-      }, 500);
-    } catch {}
-  }, [currentSong]);
-
   const search = async (q) => {
     if (!q) return;
     setLoadingSearch(true);
@@ -165,28 +139,6 @@ export default function MobileControls({ roomId }) {
     <div className="min-h-screen p-3 sm:p-4 lg:p-6 bg-gradient-to-b from-indigo-950 via-purple-900 to-pink-800 text-white">
       <div className="max-w-md lg:max-w-lg mx-auto bg-white/6 backdrop-blur p-3 sm:p-4 rounded-2xl shadow-xl">
         <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-2 text-center">Karaoke SingGing</h2>
-
-        {/* YouTube Player */}
-        {currentSong && (
-          <div className="mb-3 rounded-lg overflow-hidden bg-black/40 aspect-video">
-            <YouTube
-              videoId={currentSong.videoId}
-              opts={{
-                width: "100%",
-                height: "100%",
-                playerVars: {
-                  autoplay: 1,
-                  controls: 1,
-                  modestbranding: 1,
-                  rel: 0,
-                  playsinline: 1,
-                },
-              }}
-              onReady={(e) => { playerRef.current = e.target; }}
-              className="yt-iframe"
-            />
-          </div>
-        )}
 
         {/* Search */}
         <div className="mb-3">
