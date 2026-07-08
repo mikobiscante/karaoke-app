@@ -540,7 +540,7 @@ export default function RoomPage() {
         )}
       </header>
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 p-2 lg:p-4 min-h-0">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-1 gap-2 lg:gap-4 p-2 lg:p-4 min-h-0">
         {/* Video column */}
         <section className="lg:col-span-9 col-span-1 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-0 max-lg:min-h-[45vh] relative lg:sticky lg:top-6">
           <div className="yt-wrapper flex-1 min-h-0">
