@@ -90,6 +90,7 @@ Each plan file contains:
 
 1. **Planning:** When asked to plan a feature, research it then save the consolidated plan using `node scripts/vibe-plan.js new "<title>"`. Fill in Objective, Steps, Files Affected, and Notes.
 2. **Execution:** In build mode, reference the plan file directly (e.g., `plans/2026-07-07_something.md`) — the agent reads the file and follows each step, checking them off as it goes. Update the `**Status:**` header to "In Progress" then "Complete" as you work.
+3. **Auto-update AGENTS.md:** After marking a plan **Complete**, append its title, objective, files affected, and key notes to the **Executed Plans** section at the bottom of `AGENTS.md`. This keeps a running log of every plan executed.
 
 No plan should be created outside `plans/`.
 
@@ -100,3 +101,10 @@ No plan should be created outside `plans/`.
 - **HostControls:** buttons wrap with `flex-wrap`, compact padding/text on mobile via `text-xs`, `px-2`, `py-1.5` with `lg:` overrides
 - **MobileControls search results:** flex items use `min-w-0` on text wrapper + `shrink-0` on thumbnails/buttons + `break-words` on titles to prevent horizontal overflow. Results container uses `overflow-y-auto overflow-x-hidden`
 - **Score popover:** `width: 420px` with `max-width: 90%` and `85vw` on small screens
+
+## Executed Plans
+
+### 2026-07-08 — Safari Autoplay Fix
+- **Objective:** Fix Safari browser autoplay issue when skipping/advancing songs by removing duplicate effects and manual retry logic
+- **Files Affected:** `pages/room/[id].js`
+- **Notes:** Consolidated to a single `useEffect` with `loadVideoById`, 500ms fallback, and `playsinline: 1` for iOS Safari. Removed 3 duplicate effects and all manual `setTimeout` + `tryPlayWithRetries` calls in `advanceQueue()`, `handleSkipNoScore()`, and `startScoreSequence()`.

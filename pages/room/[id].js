@@ -137,22 +137,8 @@ export default function RoomPage() {
         try {
           playerRef.current.playVideo?.();
         } catch {}
-      }, 250);
+      }, 500);
     } catch {}
-  }, [currentSong]);
-
-  useEffect(() => {
-    if (!playerRef.current) return;
-    if (!currentSong || !currentSong.videoId) return;
-    const t = setTimeout(() => {
-      try {
-        playerRef.current.loadVideoById(currentSong.videoId);
-        playerRef.current.playVideo?.();
-      } catch (err) {
-        console.warn("Force play on currentSong change failed:", err);
-      }
-    }, 300);
-    return () => clearTimeout(t);
   }, [currentSong]);
 
   // Idle redirect: if room is idle for 1 hour, redirect to main page
@@ -228,23 +214,6 @@ export default function RoomPage() {
     }).catch(() => router.push("/"));
   }, [id, isMobile, router]);
 
-  // Force host player to load & play whenever currentSong changes in Firebase
-  useEffect(() => {
-    if (!playerRef.current) return;
-    if (!currentSong || !currentSong.videoId) return;
-    // small delay to allow YouTube API to be ready
-    const t = setTimeout(() => {
-      try {
-        playerRef.current.loadVideoById(currentSong.videoId);
-        // try to play; browsers may block autoplay without a user gesture
-        playerRef.current.playVideo?.();
-      } catch (err) {
-        console.warn("Force play on currentSong change failed:", err);
-      }
-    }, 300);
-    return () => clearTimeout(t);
-  }, [currentSong]);
-
   useEffect(() => {
     let mounted = true;
     initAnalytics().then((a) => {
@@ -309,18 +278,6 @@ export default function RoomPage() {
         thumbnail: next.thumbnail,
       });
       await set(ref(db, `rooms/${id}/playState`), "playing");
-
-      // small delay then try to force play with retries
-      setTimeout(async () => {
-        try {
-          const csSnap = await get(ref(db, `rooms/${id}/currentSong`));
-          const cs = csSnap.val();
-          const vid = cs?.videoId || next.videoId;
-          if (vid) tryPlayWithRetries(vid, 4, 350);
-        } catch (err) {
-          console.warn("Could not auto-play next video on host player:", err);
-        }
-      }, 350);
     } else {
       await set(ref(db, `rooms/${id}/currentSong`), null);
       await set(ref(db, `rooms/${id}/playState`), "paused");
@@ -427,16 +384,6 @@ export default function RoomPage() {
 
       try {
         await advanceQueue(); // remove finished, set next currentSong + playState
-        // small delay then force host player to load & play the new currentSong
-        setTimeout(async () => {
-          try {
-            const csSnap = await get(ref(db, `rooms/${id}/currentSong`));
-            const cs = csSnap.val();
-            if (cs && cs.videoId) tryPlayWithRetries(cs.videoId, 4, 350);
-          } catch (err) {
-            console.warn("Error forcing play after advance:", err);
-          }
-        }, 350);
       } catch (err) {
         console.error("advanceQueue failed:", err);
       }
@@ -499,24 +446,6 @@ export default function RoomPage() {
     await handleSkipNoScore();
   };
 
-  // Try to force play with a few retries (helps with autoplay race conditions)
-  const tryPlayWithRetries = (videoId, attempts = 4, delay = 350) => {
-    let tries = 0;
-    const attempt = () => {
-      tries++;
-      try {
-        if (playerRef.current && videoId) {
-          playerRef.current.loadVideoById(videoId);
-          playerRef.current.playVideo?.();
-        }
-      } catch (err) {
-        // ignore; we'll retry
-      }
-      if (tries < attempts) setTimeout(attempt, delay);
-    };
-    attempt();
-  };
-
   // Skip without scoring — advance queue and force autoplay on host monitor
   const handleSkipNoScore = async () => {
     if (!id) return;
@@ -548,18 +477,6 @@ export default function RoomPage() {
           thumbnail: next.thumbnail,
         });
         await set(ref(db, `rooms/${id}/playState`), "playing");
-
-        // small delay then force host player to load & play with retries
-        setTimeout(async () => {
-          try {
-            const csSnap = await get(ref(db, `rooms/${id}/currentSong`));
-            const cs = csSnap.val();
-            const vid = cs?.videoId || next.videoId;
-            if (vid) tryPlayWithRetries(vid, 4, 350);
-          } catch (err) {
-            console.warn("Could not auto-play next video on host player:", err);
-          }
-        }, 350);
       } else {
         // no next
         await set(ref(db, `rooms/${id}/currentSong`), null);
@@ -607,10 +524,11 @@ export default function RoomPage() {
                   width: "100%",
                   height: "100%",
                   playerVars: {
-                    autoplay: 0,
+                    autoplay: 1,
                     controls: 1,
                     modestbranding: 1,
                     rel: 0,
+                    playsinline: 1,
                   },
                 }}
                 onReady={(e) => {
