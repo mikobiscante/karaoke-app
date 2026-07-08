@@ -497,7 +497,7 @@ export default function RoomPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-800 text-white">
-      <header className="flex items-center justify-between px-6 py-4 bg-black/30 backdrop-blur">
+      <header className="flex items-center justify-between px-4 lg:px-6 py-2 lg:py-4 bg-black/30 backdrop-blur">
         <div className="flex items-center gap-3">
           <img
             src="/logo-singging.png"
@@ -518,9 +518,9 @@ export default function RoomPage() {
         />
       </header>
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 p-4 lg:p-6 min-h-0">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6 p-3 lg:p-6 min-h-0">
         {/* Video column */}
-        <section className="lg:col-span-9 col-span-1 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-0 relative lg:sticky lg:top-6">
+        <section className="lg:col-span-9 col-span-1 bg-black/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-0 max-lg:min-h-[45vh] relative lg:sticky lg:top-6">
           <div className="yt-wrapper flex-1 min-h-0">
             {currentSong ? (
               <YouTube
