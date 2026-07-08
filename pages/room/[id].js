@@ -48,9 +48,14 @@ export default function RoomPage() {
   const confettiRef = useRef(null);
 
   // Mark room as recently active — used by cleanup API to decide if room is stale
+  const lastTouchRef = useRef(0);
+  const TOUCH_THROTTLE_MS = 10000;
   const touchRoom = (roomId) => {
     if (!roomId) return;
-    set(ref(db, `rooms/${roomId}/lastActiveAt`), Date.now()).catch(() => {});
+    const now = Date.now();
+    if (now - lastTouchRef.current < TOUCH_THROTTLE_MS) return;
+    lastTouchRef.current = now;
+    set(ref(db, `rooms/${roomId}/lastActiveAt`), now).catch(() => {});
   };
 
   // Subscribe to Firebase nodes (queue, currentSong, playState) + mobile skip listener
