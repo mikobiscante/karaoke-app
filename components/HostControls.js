@@ -1,7 +1,7 @@
-// components/HostControls.js
 import React, { useState } from "react";
 import { ref, remove, set, get } from "firebase/database";
 import { db } from "../utils/firebase";
+import Button from "./ui/Button";
 
 export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) {
   const [busy, setBusy] = useState(false);
@@ -10,13 +10,12 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
     if (!roomId) return;
     setBusy(true);
     try {
-      await set(ref(db, `rooms/${roomId}/playState`), state); // 'playing' or 'paused'
+      await set(ref(db, `rooms/${roomId}/playState`), state);
     } finally {
       setBusy(false);
     }
   };
 
-  // Local no-score skip (fallback if parent doesn't provide onSkipNoScore)
   const localSkipNoScore = async () => {
     if (!roomId) return;
     setBusy(true);
@@ -24,12 +23,10 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
       const qRef = ref(db, `rooms/${roomId}/queue`);
       const snap = await get(qRef);
       const data = snap.val() || {};
-      // convert to ordered array by addedAt if present, otherwise keep insertion order
       const ordered = Object.entries(data || {}).map(([key, value]) => ({ key, ...value }));
       ordered.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
 
       if (ordered.length === 0) {
-        // nothing to skip
         await set(ref(db, `rooms/${roomId}/currentSong`), null);
         await set(ref(db, `rooms/${roomId}/playState`), "paused");
         setBusy(false);
@@ -39,19 +36,14 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
       const firstKey = ordered[0].key;
       const next = ordered[1] || null;
 
-      // remove the finished (first) entry
       await remove(ref(db, `rooms/${roomId}/queue/${firstKey}`));
 
       if (next) {
-        // set next as currentSong and request autoplay
         await set(ref(db, `rooms/${roomId}/currentSong`), {
-          videoId: next.videoId,
-          title: next.title,
-          thumbnail: next.thumbnail,
+          videoId: next.videoId, title: next.title, thumbnail: next.thumbnail,
         });
         await set(ref(db, `rooms/${roomId}/playState`), "playing");
       } else {
-        // no next
         await set(ref(db, `rooms/${roomId}/currentSong`), null);
         await set(ref(db, `rooms/${roomId}/playState`), "paused");
       }
@@ -62,9 +54,7 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
     }
   };
 
-  // Public skip handler used by the Skip button
   const handleSkip = async () => {
-    // If parent provided an authoritative skip handler, use it
     if (typeof onSkipNoScore === "function") {
       try {
         setBusy(true);
@@ -76,8 +66,6 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
       }
       return;
     }
-
-    // Otherwise run the local no-score skip flow
     await localSkipNoScore();
   };
 
@@ -95,37 +83,10 @@ export default function HostControls({ roomId, onExitRedirect, onSkipNoScore }) 
 
   return (
     <div className="flex items-center flex-wrap gap-2 lg:gap-3 justify-end">
-      <button
-        onClick={() => setPlayState("playing")}
-        className="bg-green-500 hover:bg-green-600 px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm rounded"
-        disabled={busy}
-      >
-        Play
-      </button>
-
-      <button
-        onClick={() => setPlayState("paused")}
-        className="bg-yellow-500 hover:bg-yellow-600 px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm rounded"
-        disabled={busy}
-      >
-        Pause
-      </button>
-
-      <button
-        onClick={handleSkip}
-        className="bg-indigo-600 hover:bg-indigo-700 px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm rounded"
-        disabled={busy}
-      >
-        Skip
-      </button>
-
-      <button
-        onClick={exitRoom}
-        className="bg-red-600 hover:bg-red-700 px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm rounded"
-        disabled={busy}
-      >
-        Exit Room (Clear)
-      </button>
+      <Button onClick={() => setPlayState("playing")} variant="default" size="sm" disabled={busy}>Play</Button>
+      <Button onClick={() => setPlayState("paused")} variant="secondary" size="sm" disabled={busy}>Pause</Button>
+      <Button onClick={handleSkip} variant="outline" size="sm" disabled={busy}>Skip</Button>
+      <Button onClick={exitRoom} variant="destructive" size="sm" disabled={busy}>Exit Room (Clear)</Button>
     </div>
   );
 }

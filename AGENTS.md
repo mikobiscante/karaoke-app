@@ -8,6 +8,8 @@
 - **Tailwind CSS v4** — uses `@import "tailwindcss"` in CSS, no `tailwind.config.js`
 - **Firebase Realtime Database v9** (modular SDK)
 - **YouTube IFrame** via `react-youtube`, search proxy at `pages/api/search.js`
+- **shadcn/ui** — custom local components at `components/ui/` (Button, Card, Input, Badge) with CSS-variable theming
+- **Open Sans** font — loaded via `@import` in CSS, weights 300 (body) and 400 (headings/buttons)
 
 ## Commands
 
@@ -32,6 +34,7 @@ No lint, test, format, typecheck, or CI — none are set up.
 - **`pages/api/search.js`** — YouTube Data API v3 proxy (appends "karaoke" to query)
 - **`utils/firebase.js`** — Firebase init (singleton via `getApps()`). Exports `db` eagerly; `initAuth()`/`initAnalytics()` are lazy, client-only dynamic imports
 - **`components/`** — `HostControls`, `MobileControls`, `Player`, `QRCodeDisplay`, `ScoreDisplay`, `SiteHeader`, `AdSlot`
+- **`components/ui/`** — shadcn-style primitives: `Button`, `Card`, `Input`, `Badge`
 - **`style/globals.css`** — Tailwind v4 entry (`@import "tailwindcss"`)
 
 PostCSS uses a single plugin: `@tailwindcss/postcss`.
@@ -113,4 +116,11 @@ No plan should be created outside `plans/`.
 - **Objective:** Optimize spacing and UX in `components/MobileControls.js` to maximize usable screen real estate on mobile devices and improve tactile interaction feedback
 - **Files Affected:** `components/MobileControls.js`
 - **Notes:** Reduced container/card/button padding, tightened section gaps and title margins, compacted result/queue items, added `active:scale-95` tactile feedback to all interactive buttons, and moved the coffee footer inside the card with a `border-t` divider. On a 375px phone, ~16px of horizontal padding was reclaimed (~5% more content width).
+
+### 2026-07-09 — UI Revamp with Shadcn Components & Blue/Black/Gray/White Theme
+- **Objective:** Revamp entire UI to use custom shadcn/ui components with a blue/black/gray/white dark theme, Open Sans font (300/400 weights), and consistent button styling
+- **Files Affected:**
+  - **New:** `lib/utils.js`, `components/ui/Button.js`, `components/ui/Card.js`, `components/ui/Input.js`, `components/ui/Badge.js`
+  - **Modified:** `style/globals.css`, `pages/_app.js`, `pages/index.js`, `pages/room/[id].js`, `components/MobileControls.js`, `components/HostControls.js`, `components/SiteHeader.js`, `components/ScoreDisplay.js`
+- **Notes:** CSS variables define the full shadcn token set (`--background: #0a0a0f`, `--primary: #2563eb`, etc.) mapped via `@theme inline {}`. Button component has 6 variants (default/secondary/outline/ghost/destructive/link) and 4 sizes. All old gradient backgrounds, pink/purple/cyan accent colors, and green/yellow/indigo button colors removed. Open Sans loaded via CSS `@import`. Build passes clean.
 

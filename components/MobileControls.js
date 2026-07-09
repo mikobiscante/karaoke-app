@@ -1,9 +1,12 @@
-// components/MobileControls.js
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
-import { ref, push, set, onValue, remove, get } from "firebase/database";
+import { ref, push, set, onValue } from "firebase/database";
 import { db } from "../utils/firebase";
-import { FaPlay, FaPause, FaStepForward, FaListUl, FaSearch } from "react-icons/fa";
+import { FaPlay, FaPause, FaStepForward, FaSearch, FaListUl } from "react-icons/fa";
+import Button from "./ui/Button";
+import Input from "./ui/Input";
+import { Card, CardContent } from "./ui/Card";
+import Badge from "./ui/Badge";
 
 export default function MobileControls({ roomId }) {
   const router = useRouter();
@@ -16,7 +19,6 @@ export default function MobileControls({ roomId }) {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const idleTimerRef = useRef(null);
   const suggestionsRef = useRef(null);
   const debounceRef = useRef(null);
 
@@ -29,7 +31,6 @@ export default function MobileControls({ roomId }) {
     const unsubQ = onValue(qRef, (snap) => {
       const data = snap.val() || {};
       const arr = Object.entries(data).map(([key, value]) => ({ key, ...value }));
-      // sort by addedAt if present
       arr.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
       setQueue(arr);
     });
@@ -40,43 +41,29 @@ export default function MobileControls({ roomId }) {
     return () => { unsubQ(); unsubCur(); unsubP(); };
   }, [roomId]);
 
-  // Idle redirect: if mobile is idle for 1 hour and nothing is playing, redirect to main page
   useEffect(() => {
     if (!roomId) return;
-
-    const IDLE_MS = 60 * 60 * 1000; // 1 hour
+    const IDLE_MS = 60 * 60 * 1000;
     let timeoutId = null;
 
     const clearExisting = () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
-      }
+      if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
     };
 
     const resetTimer = () => {
       clearExisting();
-      // do not start idle timer while music is playing
       if (playState === "playing") return;
       timeoutId = setTimeout(() => {
-        // redirect to main page when idle timeout fires
-        try {
-          router.push("/");
-        } catch (err) {
-          console.warn("Idle redirect failed:", err);
-        }
+        try { router.push("/"); } catch (err) { console.warn("Idle redirect failed:", err); }
       }, IDLE_MS);
     };
 
     const activityEvents = ["touchstart", "click", "scroll", "keydown"];
     activityEvents.forEach((ev) => window.addEventListener(ev, resetTimer, { passive: true }));
 
-    const onVisibility = () => {
-      if (!document.hidden) resetTimer();
-    };
+    const onVisibility = () => { if (!document.hidden) resetTimer(); };
     document.addEventListener("visibilitychange", onVisibility);
 
-    // start timer initially (only if not playing)
     resetTimer();
 
     return () => {
@@ -159,25 +146,17 @@ export default function MobileControls({ roomId }) {
   const handleQueue = async (item) => {
     if (!roomId) return;
     await push(ref(db, `rooms/${roomId}/queue`), {
-      videoId: item.videoId,
-      title: item.title,
-      thumbnail: item.thumbnail,
-      addedAt: Date.now()
+      videoId: item.videoId, title: item.title, thumbnail: item.thumbnail, addedAt: Date.now()
     });
   };
 
   const handlePlayNow = async (item) => {
     if (!roomId) return;
     await set(ref(db, `rooms/${roomId}/currentSong`), {
-      videoId: item.videoId,
-      title: item.title,
-      thumbnail: item.thumbnail
+      videoId: item.videoId, title: item.title, thumbnail: item.thumbnail
     });
     await push(ref(db, `rooms/${roomId}/queue`), {
-      videoId: item.videoId,
-      title: item.title,
-      thumbnail: item.thumbnail,
-      addedAt: Date.now()
+      videoId: item.videoId, title: item.title, thumbnail: item.thumbnail, addedAt: Date.now()
     });
     await set(ref(db, `rooms/${roomId}/playState`), "playing");
   };
@@ -188,136 +167,125 @@ export default function MobileControls({ roomId }) {
     await set(ref(db, `rooms/${roomId}/playState`), newState);
   };
 
-  // Mobile: request a no-score skip (host will listen and run authoritative skip)
   const requestSkipNoScore = async () => {
     if (!roomId) return;
     await set(ref(db, `rooms/${roomId}/skipRequestNoScore`), { requestedAt: Date.now() });
   };
 
   return (
-    <div className="min-h-screen p-2 sm:p-3 lg:p-4 bg-gradient-to-b from-indigo-950 via-purple-900 to-pink-800 text-white">
-      <div className="max-w-md lg:max-w-lg mx-auto bg-white/6 backdrop-blur p-2 sm:p-3 rounded-2xl shadow-xl">
-        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-2 text-center">Karaoke SingGing</h2>
+    <div className="min-h-screen bg-background text-foreground p-2 sm:p-3 lg:p-4">
+      <Card className="max-w-md lg:max-w-lg mx-auto border-border/60">
+        <CardContent className="p-2 sm:p-3">
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-400 mb-2 text-center">Karaoke SingGing</h2>
 
-        {/* Search */}
-        <div className="mb-2 relative" ref={suggestionsRef}>
-          <div className="flex gap-2">
-            <input
-              value={query}
-              onChange={handleQueryChange}
-              onKeyDown={(e) => { if (e.key === "Enter") handleSearch(query); }}
-              placeholder="Search YouTube karaoke..."
-              className="flex-1 px-3 py-2 rounded-lg text-black"
-            />
-            <button
-              onClick={() => handleSearch(query)}
-              className="bg-pink-500 hover:bg-pink-400 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg flex items-center gap-1.5 sm:gap-2 transition text-sm sm:text-base shrink-0 active:scale-95"
-            >
-              <FaSearch /> {loadingSearch ? "..." : <span className="hidden sm:inline">Search</span>}
-            </button>
-          </div>
-
-          {/* Type-ahead suggestions (YouTube-style) */}
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-gray-900 border border-white/10 rounded-lg shadow-xl overflow-hidden">
-              {suggestions.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => selectSuggestion(s)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-white/10 transition"
-                >
-                  <FaSearch className="text-gray-400 shrink-0 text-xs" />
-                  <span className="truncate">{s}</span>
-                </button>
-              ))}
+          <div className="mb-2 relative" ref={suggestionsRef}>
+            <div className="flex gap-2">
+              <Input
+                value={query}
+                onChange={handleQueryChange}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSearch(query); }}
+                placeholder="Search YouTube karaoke..."
+                className="flex-1"
+              />
+              <Button
+                onClick={() => handleSearch(query)}
+                variant="secondary"
+                size="default"
+                disabled={loadingSearch}
+              >
+                <FaSearch /> {loadingSearch ? "..." : <span className="hidden sm:inline">Search</span>}
+              </Button>
             </div>
-          )}
-        </div>
-
-        {/* Results */}
-        {results.length > 0 && (
-          <div className="mb-2 bg-white/5 p-2 sm:p-2.5 rounded-lg max-h-60 overflow-y-auto overflow-x-hidden">
-            {results.map((r) => (
-              <div key={r.videoId} className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded hover:bg-white/8 transition">
-                <img src={r.thumbnail} alt="" className="w-16 sm:w-20 h-10 sm:h-12 rounded object-cover shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium text-sm line-clamp-2 break-words">{r.title}</div>
-                  <div className="text-xs opacity-80 truncate">{r.channelTitle}</div>
-                </div>
-
-                {currentSong ? (
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-card border border-border rounded-lg shadow-xl overflow-hidden">
+                {suggestions.map((s, i) => (
                   <button
-                    onClick={() => handleQueue({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
-                    className="bg-blue-500 hover:bg-blue-600 px-2 sm:px-3 py-1.5 rounded text-xs flex items-center gap-1 shrink-0 transition active:scale-95"
+                    key={i}
+                    onClick={() => selectSuggestion(s)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm font-300 hover:bg-accent transition text-foreground"
                   >
-                    <FaListUl /> <span className="hidden sm:inline">Queue</span>
+                    <FaSearch className="text-muted-foreground shrink-0 text-xs" />
+                    <span className="truncate">{s}</span>
                   </button>
-                ) : (
-                  <button
-                    onClick={() => handlePlayNow({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
-                    className="bg-green-500 hover:bg-green-600 px-2 sm:px-3 py-1.5 rounded text-xs flex items-center gap-1 shrink-0 transition active:scale-95"
-                  >
-                    <FaPlay /> <span className="hidden sm:inline">Play</span>
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Current Song Controls */}
-        <div className="mb-2 bg-white/5 p-2 sm:p-2.5 rounded-lg">
-              <div className="flex items-center justify-between mb-2 gap-2">
-            <div className="min-w-0">
-              <div className="text-sm text-gray-200">Now Playing</div>
-              <div className="font-medium truncate">{currentSong ? currentSong.title : "No song playing"}</div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {currentSong && (
-                <>
-                  <button
-                    onClick={handlePausePlay}
-                    className="bg-yellow-500 hover:bg-yellow-600 p-2 sm:p-2.5 rounded-full text-black transition active:scale-95"
-                    aria-label="Pause/Play"
-                  >
-                    {playState === "playing" ? <FaPause /> : <FaPlay />}
-                  </button>
-                  <button
-                    onClick={requestSkipNoScore}
-                    className="bg-indigo-600 hover:bg-indigo-700 p-2 sm:p-2.5 rounded-full text-white transition active:scale-95"
-                    aria-label="Skip"
-                  >
-                    <FaStepForward />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Queue list */}
-          <div>
-            <div className="text-sm text-gray-300 mb-1.5">Queue</div>
-            {queue.length === 0 ? (
-              <div className="text-xs text-gray-400">No songs queued yet.</div>
-            ) : (
-              <ul className="space-y-2 max-h-40 overflow-auto">
-                {queue.map((v) => (
-                  <li key={v.key} className="flex items-center gap-1.5 sm:gap-2 bg-white/6 p-1 sm:p-1.5 rounded">
-                    <img src={v.thumbnail} alt="" className="w-16 h-10 rounded object-cover" />
-                    <div className="flex-1 text-sm line-clamp-2">{v.title}</div>
-                  </li>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
 
-          {/* Buy me a coffee */}
-          <div className="border-t border-white/10 pt-2 mt-2 text-center text-gray-300" style={{fontSize: 13}}>
-            <div className="mb-0.5">Buy me a coffee via GCash!</div>
-            <div className="font-bold tracking-wider text-pink-200">09260560147</div>
+          {results.length > 0 && (
+            <div className="mb-2 bg-muted/30 p-2 sm:p-2.5 rounded-lg max-h-60 overflow-y-auto overflow-x-hidden border border-border/40">
+              {results.map((r) => (
+                <div key={r.videoId} className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded hover:bg-accent transition">
+                  <img src={r.thumbnail} alt="" className="w-16 sm:w-20 h-10 sm:h-12 rounded object-cover shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-400 text-sm line-clamp-2 break-words">{r.title}</div>
+                    <div className="text-xs text-muted-foreground font-300 truncate">{r.channelTitle}</div>
+                  </div>
+                  {currentSong ? (
+                    <Button
+                      onClick={() => handleQueue({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <FaListUl /> <span className="hidden sm:inline">Queue</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handlePlayNow({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
+                      variant="default"
+                      size="sm"
+                    >
+                      <FaPlay /> <span className="hidden sm:inline">Play</span>
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mb-2 bg-muted/20 p-2 sm:p-2.5 rounded-lg border border-border/40">
+            <div className="flex items-center justify-between mb-2 gap-2">
+              <div className="min-w-0">
+                <div className="text-sm text-muted-foreground font-300">Now Playing</div>
+                <div className="font-400 truncate">{currentSong ? currentSong.title : "No song playing"}</div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {currentSong && (
+                  <>
+                    <Button onClick={handlePausePlay} variant="secondary" size="icon" aria-label="Pause/Play">
+                      {playState === "playing" ? <FaPause /> : <FaPlay />}
+                    </Button>
+                    <Button onClick={requestSkipNoScore} variant="outline" size="icon" aria-label="Skip">
+                      <FaStepForward />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-sm text-muted-foreground mb-1.5 font-300">Queue</div>
+              {queue.length === 0 ? (
+                <div className="text-xs text-muted-foreground font-300">No songs queued yet.</div>
+              ) : (
+                <ul className="space-y-2 max-h-40 overflow-auto">
+                  {queue.map((v) => (
+                    <li key={v.key} className="flex items-center gap-1.5 sm:gap-2 bg-card/50 p-1 sm:p-1.5 rounded border border-border/30">
+                      <img src={v.thumbnail} alt="" className="w-16 h-10 rounded object-cover" />
+                      <div className="flex-1 text-sm font-300 line-clamp-2">{v.title}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="border-t border-border pt-2 mt-2 text-center text-muted-foreground font-300" style={{fontSize: 13}}>
+              <div className="mb-0.5">Buy me a coffee via GCash!</div>
+              <div className="font-400 tracking-wider text-primary">09260560147</div>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

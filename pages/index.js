@@ -4,13 +4,10 @@ import { useState } from "react";
 import { ref, get } from "firebase/database";
 import { db } from "../utils/firebase";
 import {
-  FaMobileAlt,
-  FaClock,
-  FaTv,
-  FaYoutube,
-  FaArrowRight,
-  FaQrcode,
+  FaMobileAlt, FaClock, FaTv, FaYoutube, FaArrowRight, FaQrcode,
 } from "react-icons/fa";
+import Button from "../components/ui/Button";
+import { Card, CardContent } from "../components/ui/Card";
 
 export default function Home() {
   const router = useRouter();
@@ -40,92 +37,67 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-pink-800 text-white flex flex-col">
-      {/* Header */}
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="w-full flex justify-between items-center gap-2 p-3 sm:px-8 sm:py-6 shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-8 sm:h-10 shrink-0" />
-          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide">Karaoke SingGing</h1>
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-400 tracking-wide">Karaoke SingGing</h1>
         </div>
-        <div className="text-xs sm:text-sm font-semibold text-pink-400 shrink-0">💯 100% Free</div>
+        <div className="text-xs sm:text-sm font-300 text-muted-foreground shrink-0">100% Free</div>
       </header>
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-8 pt-0">
+        <section className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
+          <div>
+            <h2 className="text-3xl sm:text-4xl xl:text-5xl font-400 leading-tight mb-4">
+              QUEUE KARAOKE SONGS FROM <span className="text-primary">ANY PHONE</span>.
+            </h2>
+            <p className="text-lg text-muted-foreground mb-4 font-300">
+              Guests scan a room code, search songs, and add them instantly. The host controls playback on this screen.
+            </p>
 
-      {/* Hero Section */}
-      <section className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
-        {/* Left Text */}
-        <div>
-          <h2 className="text-3xl sm:text-4xl xl:text-5xl font-extrabold leading-tight mb-4 drop-shadow-lg">
-            QUEUE KARAOKE SONGS FROM <span className="text-pink-500">ANY PHONE</span>.
-          </h2>
-          <p className="text-lg text-gray-200 mb-4">
-            Guests scan a room code, search songs, and add them instantly. The host controls playback on this screen.
-          </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-muted-foreground mb-6 font-300">
+              <div className="flex items-center gap-2"><FaMobileAlt className="text-primary" /> No App Required</div>
+              <div className="flex items-center gap-2"><FaClock className="text-primary" /> Real-Time Queue</div>
+              <div className="flex items-center gap-2"><FaTv className="text-primary" /> Works on Any Device</div>
+              <div className="flex items-center gap-2"><FaYoutube className="text-destructive" /> YouTube Karaoke Support</div>
+            </div>
 
-          {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-300 mb-6">
-            <div className="flex items-center gap-2">
-              <FaMobileAlt className="text-pink-400" /> No App Required
-            </div>
-            <div className="flex items-center gap-2">
-              <FaClock className="text-cyan-400" /> Real‑Time Queue
-            </div>
-            <div className="flex items-center gap-2">
-              <FaTv className="text-indigo-400" /> Works on Any Device
-            </div>
-            <div className="flex items-center gap-2">
-              <FaYoutube className="text-red-500" /> YouTube Karaoke Support
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card className="border-border/60">
+                <CardContent className="p-4 sm:p-6">
+                  <h3 className="text-xl font-400 mb-2">HOST THE ROOM</h3>
+                  <p className="text-sm text-muted-foreground mb-3 font-300">Create a room and display the queue on your TV.</p>
+                  <Button onClick={createRoom} size="lg" className="w-full">
+                    Create Room <FaArrowRight />
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card className="border-border/60">
+                <CardContent className="p-4 sm:p-6">
+                  <h3 className="text-xl font-400 mb-2">JOIN THE ROOM</h3>
+                  <p className="text-sm text-muted-foreground mb-3 font-300">Use your phone to join an existing session.</p>
+                  <Button onClick={joinRoom} disabled={joining} variant="secondary" size="lg" className="w-full">
+                    {joining ? "Checking..." : "Join Room"} <FaQrcode />
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
-          {/* Action Panels */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-gradient-to-br from-indigo-900/60 to-purple-800/60 rounded-xl p-3 sm:p-4 shadow-xl border border-indigo-700 hover:shadow-pink-500/40 transition-all duration-300">
-              <h3 className="text-xl font-bold mb-2">HOST THE ROOM</h3>
-              <p className="text-sm text-gray-300 mb-3">Create a room and display the queue on your TV.</p>
-              <button
-                onClick={createRoom}
-                className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold px-5 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 hover:scale-105 shadow-lg"
-              >
-                Create Room <FaArrowRight />
-              </button>
-            </div>
-
-            <div className="bg-gradient-to-br from-pink-900/60 to-purple-800/60 rounded-xl p-3 sm:p-4 shadow-xl border border-pink-700 hover:shadow-cyan-500/40 transition-all duration-300">
-              <h3 className="text-xl font-bold mb-2">JOIN THE ROOM</h3>
-              <p className="text-sm text-gray-300 mb-3">Use your phone to join an existing session.</p>
-              <button
-                onClick={joinRoom}
-                disabled={joining}
-                className="bg-pink-500 hover:bg-pink-400 text-black font-semibold px-5 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {joining ? "Checking..." : "Join Room"} <FaQrcode />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Visual */}
-        <div className="bg-black/40 rounded-3xl p-3 sm:p-4 shadow-2xl flex flex-col justify-between hover:shadow-pink-500/30 transition-all duration-300">
-          <h3 className="text-pink-400 font-bold mb-3">HOW IT WORKS</h3>
-          <ul className="space-y-3 text-sm text-gray-300">
-            <li>
-              <span className="font-semibold text-cyan-400">1. Scan or Enter Code →</span> Guests scan the QR or enter the room code on their phones.
-            </li>
-            <li>
-              <span className="font-semibold text-indigo-400">2. Search & Add Songs →</span> Find YouTube karaoke songs and add them to the queue.
-            </li>
-            <li>
-              <span className="font-semibold text-pink-400">3. Sing Together →</span> The host controls playback for everyone on this screen.
-            </li>
-          </ul>
-          <div className="mt-6 text-xs text-gray-400 text-center">
-            Karaoke SingGing v1.0 — 100% Free
-          </div>
-        </div>
-      </section>
-    </main>
+          <Card className="bg-card/40 p-4 border-border/60">
+            <CardContent className="p-0">
+              <h3 className="text-primary font-400 mb-3">HOW IT WORKS</h3>
+              <ul className="space-y-3 text-sm text-muted-foreground font-300">
+                <li><span className="font-400 text-foreground">1. Scan or Enter Code</span> Guests scan the QR or enter the room code on their phones.</li>
+                <li><span className="font-400 text-foreground">2. Search & Add Songs</span> Find YouTube karaoke songs and add them to the queue.</li>
+                <li><span className="font-400 text-foreground">3. Sing Together</span> The host controls playback for everyone on this screen.</li>
+              </ul>
+              <div className="mt-6 text-xs text-muted-foreground text-center font-300">Karaoke SingGing v1.0 &middot; 100% Free</div>
+            </CardContent>
+          </Card>
+        </section>
+      </main>
     </div>
   );
 }

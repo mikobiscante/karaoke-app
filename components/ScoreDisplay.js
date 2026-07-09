@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Howl } from 'howler';
+import Button from './ui/Button';
 
 export default function ScoreDisplay({ roomId }) {
   const [score, setScore] = useState(null);
@@ -21,12 +22,12 @@ export default function ScoreDisplay({ roomId }) {
 
   return (
     <div className="mt-6">
-      <button className="bg-purple-600 px-4 py-2 rounded" onClick={generateScore}>
+      <Button variant="primary" onClick={generateScore}>
         Finish Song & Rate
-      </button>
+      </Button>
       {score !== null && (
         <motion.h1
-          className="text-6xl font-bold mt-4"
+          className="text-6xl font-400 mt-4 text-foreground"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ duration: 2 }}

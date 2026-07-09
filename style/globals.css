@@ -1,9 +1,63 @@
-/* style/globals.css */
-
-/* 1. This single line replaces your old v3 @tailwind directives */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400&display=swap');
 @import "tailwindcss";
 
-/* 2. Custom styles are now written directly without @layer base wrappers */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --font-weight-300: 300;
+  --font-weight-400: 400;
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: #0a0a0f;
+  --foreground: #f8fafc;
+  --card: #13131f;
+  --card-foreground: #f8fafc;
+  --popover: #1a1a2e;
+  --popover-foreground: #f8fafc;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #2d3748;
+  --secondary-foreground: #f8fafc;
+  --muted: #1a202c;
+  --muted-foreground: #94a3b8;
+  --accent: #1e3a5f;
+  --accent-foreground: #f8fafc;
+  --destructive: #dc2626;
+  --destructive-foreground: #f8fafc;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #2563eb;
+}
+
 html,
 body,
 #__next {
@@ -11,17 +65,22 @@ body,
 }
 
 body {
-  background-color: #111827;
-  color: #ffffff;
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    Arial,
-    sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: "Open Sans", sans-serif;
+  font-weight: 300;
   margin: 0;
+}
+
+* {
+  border-color: var(--border);
+  outline-color: var(--ring);
+  outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
+}
+
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  cursor: pointer;
 }
 
 .yt-player-full {
@@ -29,7 +88,6 @@ body {
   height: 100% !important;
 }
 
-/* 3. If you need a custom safelist in v4, you declare it directly inside the CSS like this: */
 @safelist bg-pink-500, bg-cyan-500, text-pink-400, text-cyan-400;
 
 .yt-wrapper {
@@ -38,6 +96,7 @@ body {
   height: 100%;
   overflow: hidden;
 }
+
 .yt-iframe,
 .yt-wrapper iframe {
   position: absolute !important;
@@ -46,52 +105,26 @@ body {
   height: 100% !important;
   border: 0;
 }
-.overlay-control {
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
-}
-.overlay-control:hover {
-  transform: translateY(-4px) scale(1.03);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-}
 
-/* Force player to fill container */
-.yt-wrapper { position: relative; width: 100%; height: 100%; overflow: hidden; }
-.yt-iframe, .yt-wrapper iframe { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; border: 0; }
-
-/* Bottom control bar (non-overlapping) */
-.video-controls-bar {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  background: linear-gradient(90deg, rgba(17,24,39,0.6), rgba(17,24,39,0.4));
-  border-top: 1px solid rgba(255,255,255,0.04);
-}
-
-/* Scoring popover */
 .score-popover {
   width: 380px;
   max-width: 90%;
-  background: rgba(255,255,255,0.96);
-  color: #000;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 18px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
   text-align: center;
 }
 
-/* Score big number */
 .score-number {
   font-size: 64px;
-  font-weight: 900;
+  font-weight: 400;
   letter-spacing: -2px;
   margin-top: 6px;
 }
 
-/* Confetti container */
 .confetti-container {
   position: absolute;
   inset: 0;
@@ -99,7 +132,6 @@ body {
   overflow: visible;
 }
 
-/* small confetti piece */
 .confetti {
   position: absolute;
   width: 10px;
@@ -110,18 +142,7 @@ body {
   border-radius: 2px;
 }
 
-/* overlay-control hover */
-.overlay-control { transition: transform .18s ease, box-shadow .18s ease; }
-.overlay-control:hover { transform: translateY(-4px) scale(1.03); box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
-
-/* responsive tweaks for mobile */
 @media (max-width: 640px) {
-  .video-controls-bar { padding: 10px; gap: 8px; flex-wrap: wrap; }
   .score-number { font-size: 44px; }
   .score-popover { padding: 16px; width: 85vw; }
 }
-
-@media (min-width: 641px) and (max-width: 1023px) {
-  .video-controls-bar { padding: 10px 14px; gap: 10px; }
-}
-
