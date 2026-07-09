@@ -417,13 +417,15 @@ export default function RoomPage() {
     </div>
 
       <aside className="lg:w-80 xl:w-96 bg-card lg:border-l border-border max-lg:border-t flex flex-col min-h-0 overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-y-auto p-3 lg:p-4">
-            <div className="flex items-center justify-between mb-3">
+          <div className="shrink-0 px-3 lg:px-4 pt-3 lg:pt-4">
+            <div className="flex items-center justify-between mb-2">
               <h3 className="text-primary font-400">UP NEXT</h3>
               {queue.length > 0 && (
                 <Badge variant="secondary">{queue.length}</Badge>
               )}
             </div>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto px-3 lg:px-4 pb-3 lg:pb-4">
             {queue.length === 0 ? (
               <p className="text-muted-foreground text-sm font-300">No songs queued yet</p>
             ) : (
