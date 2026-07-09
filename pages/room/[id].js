@@ -10,7 +10,7 @@ import AdSlot from "../../components/AdSlot";
 import { initAnalytics, getAnalyticsInstance } from "../../utils/firebase";
 import { logEvent } from "firebase/analytics";
 import Button from "../../components/ui/Button";
-import { Card, CardContent } from "../../components/ui/Card";
+
 import Badge from "../../components/ui/Badge";
 
 const ADS_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT || "ca-pub-XXXXXXXXXXXX";
@@ -413,8 +413,8 @@ export default function RoomPage() {
           )}
         </section>
 
-        <aside className="lg:flex-[3] lg:min-w-0 bg-card border border-border rounded-3xl shadow-2xl p-3 lg:p-4 flex flex-col min-h-0">
-          <div className="flex-1 min-h-0 lg:overflow-y-auto">
+        <aside className="lg:flex-[3] lg:min-w-0 bg-card border border-border rounded-3xl shadow-2xl flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 lg:p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-primary font-400">UP NEXT</h3>
               {queue.length > 0 && (
@@ -446,24 +446,21 @@ export default function RoomPage() {
                 })}
               </ul>
             )}
+            <div className="ad-container sidebar-ad w-full shrink-0 mt-3" style={{ minHeight: 100 }}>
+              <AdSlot client={ADS_CLIENT} slot={ADS_SLOT_SIDEBAR} responsive={true} />
+            </div>
           </div>
 
-          <div className="ad-container sidebar-ad w-full shrink-0" style={{ minHeight: 100 }}>
-            <AdSlot client={ADS_CLIENT} slot={ADS_SLOT_SIDEBAR} responsive={true} />
+          <div className="shrink-0 border-t border-border p-3 lg:p-4 text-center">
+            <p className="text-sm text-muted-foreground mb-2 font-300">Scan to Add/Queue Songs</p>
+            <div className="flex items-center justify-center">
+              <QRCodeClient roomId={id} />
+            </div>
+            <div className="mt-2 text-xs text-muted-foreground font-300">
+              <div>Buy me a coffee via GCash</div>
+              <div className="font-400 tracking-wider text-primary">09260560147</div>
+            </div>
           </div>
-
-          <Card className="shrink-0 border-none">
-            <CardContent className="p-2 sm:p-3 text-center">
-              <p className="text-sm text-muted-foreground mb-2 font-300">Scan to Add/Queue Songs</p>
-              <div className="flex items-center justify-center">
-                <QRCodeClient roomId={id} />
-              </div>
-              <div className="mt-2 text-xs text-muted-foreground font-300">
-                <div>Buy me a coffee via GCash</div>
-                <div className="font-400 tracking-wider text-primary">09260560147</div>
-              </div>
-            </CardContent>
-          </Card>
         </aside>
       </main>
     </div>
