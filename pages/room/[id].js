@@ -247,7 +247,7 @@ export default function RoomPage() {
     launchConfetti();
 
     const sfx = new Audio("/sounds/score-fanfare.m4a");
-    sfx.currentTime = 2;
+    sfx.currentTime = 2.5;
     sfx.play().catch(() => {});
 
     const start = performance.now();
