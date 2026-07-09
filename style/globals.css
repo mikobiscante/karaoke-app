@@ -107,13 +107,13 @@ button:not(:disabled),
 }
 
 .score-popover {
-  width: 440px;
+  width: 600px;
   max-width: 90%;
   background: rgba(255, 255, 255, 0.92);
   color: #0a0a0f;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 16px;
-  padding: 28px;
+  padding: 44px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
   text-align: center;
 }
@@ -123,11 +123,11 @@ button:not(:disabled),
 }
 
 .score-number {
-  font-size: 88px;
-  font-weight: 400;
+  font-size: 120px;
+  font-weight: 700;
   letter-spacing: -2px;
   margin-top: 6px;
-  color: var(--primary);
+  color: #0a0a0f;
 }
 
 .confetti-container {
@@ -148,6 +148,6 @@ button:not(:disabled),
 }
 
 @media (max-width: 640px) {
-  .score-number { font-size: 56px; }
-  .score-popover { padding: 22px; width: 90vw; }
+  .score-number { font-size: 72px; }
+  .score-popover { padding: 30px; width: 90vw; }
 }

@@ -441,9 +441,9 @@ export default function RoomPage() {
           {showScore && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="score-popover pointer-events-auto">
-                <div className="text-xl font-400">Performance Score</div>
+                <div className="text-2xl font-400">Performance Score</div>
                 <div className="score-number">{displayScore}</div>
-                <div className="mt-2 text-sm text-muted-foreground">
+                <div className="mt-2 text-base text-muted-foreground">
                   {displayScore >= 98 ? "Legendary performance!" : displayScore >= 94 ? "Amazing! Crowd loved it!" : displayScore >= 90 ? "Fantastic singing!" : displayScore >= 86 ? "Great job!" : "Nice effort!"}
                 </div>
               </div>
