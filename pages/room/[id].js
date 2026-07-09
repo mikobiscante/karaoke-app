@@ -31,7 +31,6 @@ export default function RoomPage() {
   const [playState, setPlayState] = useState("paused");
   const [showScore, setShowScore] = useState(false);
   const [displayScore, setDisplayScore] = useState(0);
-  const [finalScore, setFinalScore] = useState(0);
   const [showMobileControls, setShowMobileControls] = useState(false);
 
   const playerRef = useRef(null);
@@ -204,7 +203,6 @@ export default function RoomPage() {
   const onPlayerStateChange = async (e) => {
     if (e.data === 0 && id) {
       const score = 80 + Math.floor(Math.random() * 21);
-      setFinalScore(score);
       startScoreSequence(score);
     }
   };

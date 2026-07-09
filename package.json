@@ -8,14 +8,11 @@
   },
   "dependencies": {
     "firebase": "^9.23.0",
-    "framer-motion": "^10.0.0",
-    "howler": "^2.2.3",
     "next": "latest",
     "qrcode.react": "^4.2.0",
     "react": "latest",
     "react-dom": "latest",
     "react-icons": "^5.7.0",
-    "react-qr-code": "^2.2.0",
     "react-youtube": "^10.1.0",
     "uuid": "^14.0.1"
   },

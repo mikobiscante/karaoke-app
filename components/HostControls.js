@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ref, remove, set, get } from "firebase/database";
 import { db } from "../utils/firebase";
 import Button from "./ui/Button";

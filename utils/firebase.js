@@ -66,6 +66,4 @@ export const initAnalytics = async () => {
   }
 };
 
-export const getAuthInstance = () => authInstance;
 export const getAnalyticsInstance = () => analyticsInstance;
-export default app;
