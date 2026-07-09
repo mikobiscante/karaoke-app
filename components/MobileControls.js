@@ -2,11 +2,15 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import { ref, push, set, onValue } from "firebase/database";
 import { db } from "../utils/firebase";
-import { FaPlay, FaPause, FaStepForward, FaSearch, FaListUl } from "react-icons/fa";
+import { FaPlay, FaPause, FaStepForward, FaSearch, FaListUl, FaFire } from "react-icons/fa";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
-import { Card, CardContent } from "./ui/Card";
-import Badge from "./ui/Badge";
+
+const TABS = [
+  { key: "search", label: "Search", icon: FaSearch },
+  { key: "queue", label: "Queue", icon: FaListUl },
+  { key: "popular", label: "Popular", icon: FaFire },
+];
 
 export default function MobileControls({ roomId }) {
   const router = useRouter();
@@ -18,6 +22,10 @@ export default function MobileControls({ roomId }) {
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeTab, setActiveTab] = useState("search");
+  const [popularSongs, setPopularSongs] = useState([]);
+  const [loadingPopular, setLoadingPopular] = useState(false);
+  const [popularFetched, setPopularFetched] = useState(false);
 
   const suggestionsRef = useRef(null);
   const debounceRef = useRef(null);
@@ -172,106 +180,146 @@ export default function MobileControls({ roomId }) {
     await set(ref(db, `rooms/${roomId}/skipRequestNoScore`), { requestedAt: Date.now() });
   };
 
+  const fetchPopularSongs = async (force = false) => {
+    if (!force && popularFetched) return;
+    setLoadingPopular(true);
+    try {
+      const res = await fetch("/api/search?q=popular karaoke songs");
+      const json = await res.json();
+      setPopularSongs(json.items || []);
+      setPopularFetched(true);
+    } catch (e) {
+      console.error(e);
+      setPopularSongs([]);
+    } finally {
+      setLoadingPopular(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "popular") {
+      fetchPopularSongs();
+    }
+  }, [activeTab]);
+
+  const handleRefreshPopular = () => {
+    setPopularFetched(false);
+    setPopularSongs([]);
+    fetchPopularSongs(true);
+  };
+
+  const renderResultItem = (item) => (
+    <div key={item.videoId} className="flex items-center gap-1.5 p-1.5 rounded hover:bg-accent transition">
+      <img src={item.thumbnail} alt="" className="w-16 h-10 rounded object-cover shrink-0" />
+      <div className="min-w-0 flex-1">
+        <div className="font-400 text-sm line-clamp-2 break-words">{item.title}</div>
+        {item.channelTitle && (
+          <div className="text-xs text-muted-foreground font-300 truncate">{item.channelTitle}</div>
+        )}
+      </div>
+      {currentSong ? (
+        <Button
+          onClick={() => handleQueue({ videoId: item.videoId, title: item.title, thumbnail: item.thumbnail })}
+          variant="secondary"
+          size="sm"
+        >
+          <FaListUl />
+        </Button>
+      ) : (
+        <Button
+          onClick={() => handlePlayNow({ videoId: item.videoId, title: item.title, thumbnail: item.thumbnail })}
+          variant="default"
+          size="sm"
+        >
+          <FaPlay />
+        </Button>
+      )}
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-background text-foreground p-2 sm:p-3 lg:p-4">
-      <Card className="max-w-md lg:max-w-lg mx-auto border-border/60">
-        <CardContent className="p-2 sm:p-3">
-          <h2 className="text-lg sm:text-xl lg:text-2xl font-400 mb-2 text-center">Karaoke SingGing</h2>
-
-          <div className="mb-2 relative" ref={suggestionsRef}>
-            <div className="flex gap-2">
-              <Input
-                value={query}
-                onChange={handleQueryChange}
-                onKeyDown={(e) => { if (e.key === "Enter") handleSearch(query); }}
-                placeholder="Search YouTube karaoke..."
-                className="flex-1"
-              />
-              <Button
-                onClick={() => handleSearch(query)}
-                variant="secondary"
-                size="default"
-                disabled={loadingSearch}
-              >
-                <FaSearch /> {loadingSearch ? "..." : <span className="hidden sm:inline">Search</span>}
-              </Button>
-            </div>
-            {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-card border border-border rounded-lg shadow-xl overflow-hidden">
-                {suggestions.map((s, i) => (
-                  <button
-                    key={i}
-                    onClick={() => selectSuggestion(s)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm font-300 hover:bg-accent transition text-foreground"
-                  >
-                    <FaSearch className="text-muted-foreground shrink-0 text-xs" />
-                    <span className="truncate">{s}</span>
-                  </button>
-                ))}
+    <div className="h-screen bg-background text-foreground flex flex-col">
+      <div className="flex-1 overflow-y-auto px-2 pt-2 pb-1">
+        {activeTab === "search" && (
+          <div>
+            <div className="mb-2 relative" ref={suggestionsRef}>
+              <div className="flex gap-2">
+                <Input
+                  value={query}
+                  onChange={handleQueryChange}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleSearch(query); }}
+                  placeholder="Search YouTube karaoke..."
+                  className="flex-1"
+                />
+                <Button
+                  onClick={() => handleSearch(query)}
+                  variant="secondary"
+                  size="default"
+                  disabled={loadingSearch}
+                >
+                  <FaSearch /> {loadingSearch ? "..." : null}
+                </Button>
               </div>
-            )}
-          </div>
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-card border border-border rounded-lg shadow-xl overflow-hidden">
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => selectSuggestion(s)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm font-300 hover:bg-accent transition text-foreground"
+                    >
+                      <FaSearch className="text-muted-foreground shrink-0 text-xs" />
+                      <span className="truncate">{s}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {results.length > 0 && (
-            <div className="mb-2 bg-muted/30 p-2 sm:p-2.5 rounded-lg max-h-60 overflow-y-auto overflow-x-hidden border border-border/40">
-              {results.map((r) => (
-                <div key={r.videoId} className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded hover:bg-accent transition">
-                  <img src={r.thumbnail} alt="" className="w-16 sm:w-20 h-10 sm:h-12 rounded object-cover shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-400 text-sm line-clamp-2 break-words">{r.title}</div>
-                    <div className="text-xs text-muted-foreground font-300 truncate">{r.channelTitle}</div>
-                  </div>
-                  {currentSong ? (
-                    <Button
-                      onClick={() => handleQueue({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      <FaListUl /> <span className="hidden sm:inline">Queue</span>
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => handlePlayNow({ videoId: r.videoId, title: r.title, thumbnail: r.thumbnail })}
-                      variant="default"
-                      size="sm"
-                    >
-                      <FaPlay /> <span className="hidden sm:inline">Play</span>
-                    </Button>
+            {loadingSearch ? (
+              <div className="text-center text-muted-foreground text-sm font-300 py-4">Searching...</div>
+            ) : results.length > 0 ? (
+              <div className="bg-muted/30 p-2 rounded-lg border border-border/40 space-y-0.5">
+                {results.map(renderResultItem)}
+              </div>
+            ) : query && !loadingSearch ? (
+              <div className="text-center text-muted-foreground text-sm font-300 py-4">No results found.</div>
+            ) : null}
+          </div>
+        )}
+
+        {activeTab === "queue" && (
+          <div className="space-y-2">
+            <div className="bg-muted/20 p-2 rounded-lg border border-border/40">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-xs text-muted-foreground font-300">Now Playing</div>
+                  <div className="font-400 text-sm truncate">{currentSong ? currentSong.title : "No song playing"}</div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {currentSong && (
+                    <>
+                      <Button onClick={handlePausePlay} variant="secondary" size="icon" aria-label="Pause/Play">
+                        {playState === "playing" ? <FaPause /> : <FaPlay />}
+                      </Button>
+                      <Button onClick={requestSkipNoScore} variant="outline" size="icon" aria-label="Skip">
+                        <FaStepForward />
+                      </Button>
+                    </>
                   )}
                 </div>
-              ))}
-            </div>
-          )}
-
-          <div className="mb-2 bg-muted/20 p-2 sm:p-2.5 rounded-lg border border-border/40">
-            <div className="flex items-center justify-between mb-2 gap-2">
-              <div className="min-w-0">
-                <div className="text-sm text-muted-foreground font-300">Now Playing</div>
-                <div className="font-400 truncate">{currentSong ? currentSong.title : "No song playing"}</div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {currentSong && (
-                  <>
-                    <Button onClick={handlePausePlay} variant="secondary" size="icon" aria-label="Pause/Play">
-                      {playState === "playing" ? <FaPause /> : <FaPlay />}
-                    </Button>
-                    <Button onClick={requestSkipNoScore} variant="outline" size="icon" aria-label="Skip">
-                      <FaStepForward />
-                    </Button>
-                  </>
-                )}
               </div>
             </div>
 
-            <div>
+            <div className="bg-muted/20 p-2 rounded-lg border border-border/40">
               <div className="text-sm text-muted-foreground mb-1.5 font-300">Queue</div>
               {queue.length === 0 ? (
                 <div className="text-xs text-muted-foreground font-300">No songs queued yet.</div>
               ) : (
-                <ul className="space-y-2 max-h-40 overflow-auto">
+                <ul className="space-y-1.5">
                   {queue.map((v) => (
-                    <li key={v.key} className="flex items-center gap-1.5 sm:gap-2 bg-card/50 p-1 sm:p-1.5 rounded border border-border/30">
-                      <img src={v.thumbnail} alt="" className="w-16 h-10 rounded object-cover" />
+                    <li key={v.key} className="flex items-center gap-1.5 bg-card/50 p-1.5 rounded border border-border/30">
+                      <img src={v.thumbnail} alt="" className="w-14 h-9 rounded object-cover shrink-0" />
                       <div className="flex-1 text-sm font-300 line-clamp-2">{v.title}</div>
                     </li>
                   ))}
@@ -279,13 +327,51 @@ export default function MobileControls({ roomId }) {
               )}
             </div>
 
-            <div className="border-t border-border pt-2 mt-2 text-center text-muted-foreground font-300" style={{fontSize: 13}}>
-              <div className="mb-0.5">Buy me a coffee via GCash!</div>
-              <div className="font-400 tracking-wider text-primary">09260560147</div>
+            <div className="text-center text-muted-foreground font-300 text-xs pt-1">
+              <div>Buy me a coffee via GCash!</div>
+              <div className="font-400 tracking-wider text-primary text-sm">09260560147</div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        )}
+
+        {activeTab === "popular" && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-400 text-muted-foreground">Popular Karaoke Songs</h2>
+              <Button onClick={handleRefreshPopular} variant="ghost" size="sm" disabled={loadingPopular}>
+                <FaFire /> Refresh
+              </Button>
+            </div>
+
+            {loadingPopular ? (
+              <div className="text-center text-muted-foreground text-sm font-300 py-4">Loading popular songs...</div>
+            ) : (
+              <div className="bg-muted/30 p-2 rounded-lg border border-border/40 space-y-0.5">
+                {popularSongs.map(renderResultItem)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-background border-t border-border flex pb-1 shrink-0">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-300 transition active:scale-95 ${
+                isActive ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <Icon className="text-base" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
