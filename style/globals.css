@@ -107,22 +107,27 @@ button:not(:disabled),
 }
 
 .score-popover {
-  width: 380px;
+  width: 440px;
   max-width: 90%;
-  background: var(--popover);
-  color: var(--popover-foreground);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.92);
+  color: #0a0a0f;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 16px;
-  padding: 18px;
+  padding: 28px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
   text-align: center;
 }
 
+.score-popover .text-muted-foreground {
+  color: #475569;
+}
+
 .score-number {
-  font-size: 64px;
+  font-size: 88px;
   font-weight: 400;
   letter-spacing: -2px;
   margin-top: 6px;
+  color: var(--primary);
 }
 
 .confetti-container {
@@ -143,6 +148,6 @@ button:not(:disabled),
 }
 
 @media (max-width: 640px) {
-  .score-number { font-size: 44px; }
-  .score-popover { padding: 16px; width: 85vw; }
+  .score-number { font-size: 56px; }
+  .score-popover { padding: 22px; width: 90vw; }
 }
