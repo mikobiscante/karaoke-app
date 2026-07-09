@@ -12,6 +12,7 @@ export default async function handler(req, res) {
     maxResults: "8",
     type: "video"
   });
+  if (req.query.pageToken) params.set("pageToken", req.query.pageToken);
 
   try {
     const r = await fetch(`https://www.googleapis.com/youtube/v3/search?${params.toString()}`);
@@ -26,7 +27,7 @@ export default async function handler(req, res) {
       channelTitle: it.snippet.channelTitle,
       thumbnail: it.snippet.thumbnails?.mqdefault?.url || it.snippet.thumbnails?.default?.url
     }));
-    res.status(200).json({ items });
+    res.status(200).json({ items, nextPageToken: data.nextPageToken || null });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

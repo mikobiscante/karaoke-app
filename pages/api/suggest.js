@@ -13,7 +13,18 @@ export default async function handler(req, res) {
     if (!match) return res.json({ suggestions: [] });
 
     const raw = JSON.parse(match[2]);
-    const suggestions = raw.map((item) => item[0]);
+    const nonSongKeywords = [
+      "machine", "equipment", "microphone", "speaker",
+      "download", "app", "tutorial", "near me", "rental",
+      "software", "shop", "store", "buy", "review",
+    ];
+    const suggestions = raw
+      .map((item) => item[0].replace(/\s*karaoke\s*/gi, "").trim())
+      .filter((s) => {
+        if (!s || s.length < 2) return false;
+        const lower = s.toLowerCase();
+        return !nonSongKeywords.some((kw) => lower.includes(kw));
+      });
 
     res.json({ suggestions });
   } catch (err) {

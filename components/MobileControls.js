@@ -27,9 +27,14 @@ export default function MobileControls({ roomId }) {
   const [loadingPopular, setLoadingPopular] = useState(false);
   const [popularFetched, setPopularFetched] = useState(false);
   const [recentlyAdded, setRecentlyAdded] = useState(null);
+  const [nextPageToken, setNextPageToken] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentSearchQuery, setCurrentSearchQuery] = useState("");
 
   const suggestionsRef = useRef(null);
   const debounceRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const sentinelRef = useRef(null);
 
   useEffect(() => {
     if (!roomId) return;
@@ -82,19 +87,32 @@ export default function MobileControls({ roomId }) {
     };
   }, [roomId, playState, router]);
 
-  const search = async (q) => {
+  const search = async (q, pageToken) => {
     if (!q) return;
     setShowSuggestions(false);
-    setLoadingSearch(true);
+    const isAppend = !!pageToken;
+    if (isAppend) {
+      setLoadingMore(true);
+    } else {
+      setLoadingSearch(true);
+    }
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      let url = `/api/search?q=${encodeURIComponent(q)}`;
+      if (pageToken) url += `&pageToken=${encodeURIComponent(pageToken)}`;
+      const res = await fetch(url);
       const json = await res.json();
-      setResults(json.items || []);
+      if (isAppend) {
+        setResults(prev => [...prev, ...(json.items || [])]);
+      } else {
+        setResults(json.items || []);
+      }
+      setNextPageToken(json.nextPageToken || null);
     } catch (e) {
       console.error(e);
-      setResults([]);
+      if (!isAppend) setResults([]);
     } finally {
       setLoadingSearch(false);
+      setLoadingMore(false);
     }
   };
 
@@ -138,11 +156,34 @@ export default function MobileControls({ roomId }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const nextPageTokenRef = useRef(nextPageToken);
+  const loadingMoreRef = useRef(loadingMore);
+  const loadingSearchRef = useRef(loadingSearch);
+  const currentSearchQueryRef = useRef(currentSearchQuery);
+  useEffect(() => { nextPageTokenRef.current = nextPageToken; }, [nextPageToken]);
+  useEffect(() => { loadingMoreRef.current = loadingMore; }, [loadingMore]);
+  useEffect(() => { loadingSearchRef.current = loadingSearch; }, [loadingSearch]);
+  useEffect(() => { currentSearchQueryRef.current = currentSearchQuery; }, [currentSearchQuery]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && nextPageTokenRef.current && !loadingMoreRef.current && !loadingSearchRef.current) {
+        search(currentSearchQueryRef.current, nextPageTokenRef.current);
+      }
+    }, { root: scrollContainerRef.current, rootMargin: "200px" });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
   const handleSearch = (q) => {
     if (!q) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setShowSuggestions(false);
     setSuggestions([]);
+    setCurrentSearchQuery(q);
+    setNextPageToken(null);
     search(q);
   };
 
@@ -280,14 +321,20 @@ export default function MobileControls({ roomId }) {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-2 pt-2 pb-1">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 pt-2 pb-1">
         {activeTab === "search" && (
           <div>
             {loadingSearch ? (
               <div className="text-center text-muted-foreground text-sm font-300 py-4">Searching...</div>
             ) : results.length > 0 ? (
-              <div className="bg-muted/30 p-2 rounded-lg border border-border/40 space-y-0.5">
-                {results.map(renderResultItem)}
+              <div>
+                <div className="bg-muted/30 p-2 rounded-lg border border-border/40 space-y-0.5">
+                  {results.map(renderResultItem)}
+                </div>
+                {loadingMore && (
+                  <div className="text-center text-muted-foreground text-sm font-300 py-3">Loading more...</div>
+                )}
+                <div ref={sentinelRef} className="h-px" />
               </div>
             ) : query && !loadingSearch ? (
               <div className="text-center text-muted-foreground text-sm font-300 py-4">No results found.</div>
