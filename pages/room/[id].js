@@ -39,6 +39,7 @@ export default function RoomPage() {
   const advanceTimeoutRef = useRef(null);
   const scoredRef = useRef(false);
   const confettiRef = useRef(null);
+  const playStateRef = useRef(playState);
 
   const lastTouchRef = useRef(0);
   const TOUCH_THROTTLE_MS = 10000;
@@ -98,6 +99,8 @@ export default function RoomPage() {
       else playerRef.current.pauseVideo?.();
     } catch {}
   }, [playState]);
+
+  useEffect(() => { playStateRef.current = playState; }, [playState]);
 
   useEffect(() => {
     if (!playerRef.current) return;
@@ -437,7 +440,7 @@ export default function RoomPage() {
                 }}
                 onReady={(e) => {
                   playerRef.current = e.target;
-                  if (playState === "playing") {
+                  if (playStateRef.current === "playing") {
                     try { e.target.playVideo?.(); } catch {}
                   }
                 }}
