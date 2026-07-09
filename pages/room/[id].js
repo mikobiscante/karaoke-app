@@ -36,6 +36,8 @@ export default function RoomPage() {
   const playerRef = useRef(null);
   const scoreAnimRef = useRef(null);
   const scoringTimeoutRef = useRef(null);
+  const advanceTimeoutRef = useRef(null);
+  const scoredRef = useRef(false);
   const confettiRef = useRef(null);
 
   const lastTouchRef = useRef(0);
@@ -103,6 +105,12 @@ export default function RoomPage() {
       try { playerRef.current.stopVideo?.(); } catch {}
       return;
     }
+    scoredRef.current = false;
+    if (scoringTimeoutRef.current) { clearTimeout(scoringTimeoutRef.current); scoringTimeoutRef.current = null; }
+    if (advanceTimeoutRef.current) { clearTimeout(advanceTimeoutRef.current); advanceTimeoutRef.current = null; }
+    stopConfetti();
+    setShowScore(false);
+    setDisplayScore(0);
     try {
       playerRef.current.loadVideoById(currentSong.videoId);
       setTimeout(() => {
@@ -110,6 +118,23 @@ export default function RoomPage() {
       }, 500);
     } catch {}
   }, [currentSong]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const player = playerRef.current;
+      if (!player || !player.getDuration || playState !== "playing") return;
+      if (scoredRef.current || !currentSong) return;
+      const duration = player.getDuration();
+      const current = player.getCurrentTime();
+      const remaining = duration - current;
+      if (remaining > 0 && remaining <= 12) {
+        scoredRef.current = true;
+        const score = 80 + Math.floor(Math.random() * 21);
+        startScoreSequence(score, remaining);
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [playState, currentSong]);
 
   useEffect(() => {
     if (!id) return;
@@ -201,21 +226,26 @@ export default function RoomPage() {
   };
 
   const onPlayerStateChange = async (e) => {
-    if (e.data === 0 && id) {
+    if (e.data === 0 && id && !scoredRef.current) {
+      scoredRef.current = true;
       const score = 80 + Math.floor(Math.random() * 21);
-      startScoreSequence(score);
+      startScoreSequence(score, 0);
     }
   };
 
-  const startScoreSequence = (score) => {
+  const startScoreSequence = (score, remainingAtTrigger) => {
     if (scoreAnimRef.current) cancelAnimationFrame(scoreAnimRef.current);
     if (scoringTimeoutRef.current) clearTimeout(scoringTimeoutRef.current);
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+
+    const countDuration = 3000;
+    const pauseAfter = 5000;
+    const showDuration = countDuration + pauseAfter;
+
     setDisplayScore(0);
     setShowScore(true);
     launchConfetti();
 
-    const countDuration = 3000;
-    const pauseAfter = 2000;
     const start = performance.now();
     const from = 0;
     const to = score;
@@ -230,17 +260,22 @@ export default function RoomPage() {
     };
     scoreAnimRef.current = requestAnimationFrame(step);
 
-    scoringTimeoutRef.current = setTimeout(async () => {
+    scoringTimeoutRef.current = setTimeout(() => {
       stopConfetti();
       setShowScore(false);
       setDisplayScore(0);
       scoringTimeoutRef.current = null;
+    }, showDuration);
+
+    const advanceDelayMs = Math.max(0, (remainingAtTrigger - 2) * 1000);
+    advanceTimeoutRef.current = setTimeout(async () => {
+      advanceTimeoutRef.current = null;
       try {
         await advanceQueue();
       } catch (err) {
         console.error("advanceQueue failed:", err);
       }
-    }, countDuration + pauseAfter);
+    }, advanceDelayMs);
   };
 
   const launchConfetti = () => {
