@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ref, get, set } from "firebase/database";
 import { db } from "../utils/firebase";
 import {
-  FaMobileAlt, FaClock, FaTv, FaYoutube, FaArrowRight, FaQrcode,
+  FaMobileAlt, FaClock, FaTv, FaYoutube, FaArrowRight, FaQrcode, FaStar,
 } from "react-icons/fa";
 import Button from "../components/ui/Button";
 import { Card, CardContent } from "../components/ui/Card";
@@ -72,6 +72,7 @@ export default function Home() {
               <div className="flex items-center gap-2"><FaClock className="text-primary" /> Real-Time Queue</div>
               <div className="flex items-center gap-2"><FaTv className="text-primary" /> Works on Any Device</div>
               <div className="flex items-center gap-2"><FaYoutube className="text-destructive" /> YouTube Karaoke Support</div>
+              <div className="flex items-center gap-2"><FaStar className="text-primary" /> Score Every Song</div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -103,6 +104,7 @@ export default function Home() {
                 <li><span className="font-400 text-foreground">1. Scan or Enter Code</span> Guests scan the QR or enter the room code on their phones.</li>
                 <li><span className="font-400 text-foreground">2. Search & Add Songs</span> Find YouTube karaoke songs and add them to the queue.</li>
                 <li><span className="font-400 text-foreground">3. Sing Together</span> The host controls playback for everyone on this screen.</li>
+                <li><span className="font-400 text-foreground">4. Get Your Score</span> At the end of each song, see your score and celebrate.</li>
               </ul>
               <div className="mt-6 text-xs text-muted-foreground text-center font-300">Karaoke SingGing v1.0 &middot; 100% Free</div>
             </CardContent>
