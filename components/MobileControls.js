@@ -26,6 +26,7 @@ export default function MobileControls({ roomId }) {
   const [popularSongs, setPopularSongs] = useState([]);
   const [loadingPopular, setLoadingPopular] = useState(false);
   const [popularFetched, setPopularFetched] = useState(false);
+  const [recentlyAdded, setRecentlyAdded] = useState(null);
 
   const suggestionsRef = useRef(null);
   const debounceRef = useRef(null);
@@ -156,6 +157,8 @@ export default function MobileControls({ roomId }) {
     await push(ref(db, `rooms/${roomId}/queue`), {
       videoId: item.videoId, title: item.title, thumbnail: item.thumbnail, addedAt: Date.now()
     });
+    setRecentlyAdded(item.videoId);
+    setTimeout(() => setRecentlyAdded(null), 800);
   };
 
   const handlePlayNow = async (item) => {
@@ -217,23 +220,17 @@ export default function MobileControls({ roomId }) {
           <div className="text-xs text-muted-foreground font-300 truncate">{item.channelTitle}</div>
         )}
       </div>
-      {currentSong ? (
-        <Button
-          onClick={() => handleQueue({ videoId: item.videoId, title: item.title, thumbnail: item.thumbnail })}
-          variant="secondary"
-          size="sm"
-        >
+      <Button
+        onClick={() => handleQueue({ videoId: item.videoId, title: item.title, thumbnail: item.thumbnail })}
+        variant="secondary"
+        size="sm"
+      >
+        {recentlyAdded === item.videoId ? (
+          <span className="text-green-400 animate-bounce inline-block">✓</span>
+        ) : (
           <FaListUl />
-        </Button>
-      ) : (
-        <Button
-          onClick={() => handlePlayNow({ videoId: item.videoId, title: item.title, thumbnail: item.thumbnail })}
-          variant="default"
-          size="sm"
-        >
-          <FaPlay />
-        </Button>
-      )}
+        )}
+      </Button>
     </div>
   );
 
