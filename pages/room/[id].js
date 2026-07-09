@@ -317,8 +317,9 @@ export default function RoomPage() {
   if (isMobile) return <MobileControls roomId={id} />;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <header className="relative flex items-center justify-between px-3 lg:px-6 py-1.5 lg:py-4 bg-card border-b border-border lg:rounded-none rounded-full mx-2 mt-2 lg:mx-0 lg:mt-0 z-40">
+    <div className="min-h-screen lg:h-screen flex flex-col lg:flex-row bg-background text-foreground">
+      <div className="flex-1 flex flex-col min-h-0">
+        <header className="shrink-0 flex items-center justify-between px-3 lg:px-6 py-2 bg-card border-b border-border z-40">
         <div className="flex items-center gap-2 lg:gap-3">
           <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-8 lg:h-10" />
           <div className="hidden lg:block">
@@ -348,7 +349,7 @@ export default function RoomPage() {
         )}
       </header>
 
-      <main className="flex-1 flex flex-col lg:flex-row gap-2 lg:gap-4 p-2 lg:p-4 min-h-0 lg:overflow-hidden">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden p-2 lg:p-4">
         <section className="lg:flex-[9] lg:min-w-0 bg-card/70 border border-border rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-0 max-lg:min-h-[45vh] relative">
           <div className="yt-wrapper flex-1 min-h-0">
             {currentSong ? (
@@ -412,8 +413,10 @@ export default function RoomPage() {
             </div>
           )}
         </section>
+      </main>
+    </div>
 
-        <aside className="lg:flex-[3] lg:min-w-0 bg-card border border-border rounded-3xl shadow-2xl flex flex-col min-h-0 overflow-hidden">
+      <aside className="lg:w-80 xl:w-96 bg-card lg:border-l border-border max-lg:border-t flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto p-3 lg:p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-primary font-400">UP NEXT</h3>
@@ -462,7 +465,6 @@ export default function RoomPage() {
             </div>
           </div>
         </aside>
-      </main>
     </div>
   );
 }
