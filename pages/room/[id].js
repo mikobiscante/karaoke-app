@@ -143,11 +143,15 @@ export default function RoomPage() {
   }, [id, playState, router]);
 
   useEffect(() => {
-    if (!id || !isMobile) return;
-    get(ref(db, `rooms/${id}`)).then((snap) => {
-      if (!snap.exists()) router.push("/");
-    }).catch(() => router.push("/"));
-  }, [id, isMobile, router]);
+    if (!id) return;
+    const roomRef = ref(db, `rooms/${id}`);
+    const unsub = onValue(roomRef, (snap) => {
+      if (!snap.exists()) {
+        try { router.push("/"); } catch (err) { console.warn("Room gone, redirect failed:", err); }
+      }
+    });
+    return () => unsub();
+  }, [id, router]);
 
   useEffect(() => {
     let mounted = true;

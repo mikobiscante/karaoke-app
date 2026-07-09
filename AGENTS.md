@@ -124,3 +124,8 @@ No plan should be created outside `plans/`.
   - **Modified:** `style/globals.css`, `pages/_app.js`, `pages/index.js`, `pages/room/[id].js`, `components/MobileControls.js`, `components/HostControls.js`, `components/SiteHeader.js`, `components/ScoreDisplay.js`
 - **Notes:** CSS variables define the full shadcn token set (`--background: #0a0a0f`, `--primary: #2563eb`, etc.) mapped via `@theme inline {}`. Button component has 6 variants (default/secondary/outline/ghost/destructive/link) and 4 sizes. All old gradient backgrounds, pink/purple/cyan accent colors, and green/yellow/indigo button colors removed. Open Sans loaded via CSS `@import`. Build passes clean.
 
+### 2026-07-09 — Room Deletion + Redirect for Non-Existent Rooms
+- **Objective:** Delete room from Firebase on host exit and after 1hr idle, and redirect any user opening a non-existent generated room URL (host or mobile) to the main page; mobile auto-redirects live when a room disappears
+- **Files Affected:** `pages/index.js`, `pages/room/[id].js`
+- **Notes:** `createRoom` in index.js now pre-creates the room in Firebase (awaited `set` of `_createdAt`, `lastActiveAt`, `currentSong: null`, `playState: "paused"`, `queue: null`) before navigating, preventing a false redirect on fresh creation. The mobile-only mount `get()` check in `[id].js` was replaced by a universal `onValue` watcher on `rooms/${id}` that redirects both views to `/` when the room node is missing (initial load + live deletion). HostControls "Exit Room" already deletes + redirects (kept host-only per user). 1hr idle cleanup (host idle removal + `pages/api/cleanup.js` cron) retained. Build passes clean.
+

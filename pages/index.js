@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { v4 as uuidv4 } from "uuid";
 import { useState } from "react";
-import { ref, get } from "firebase/database";
+import { ref, get, set } from "firebase/database";
 import { db } from "../utils/firebase";
 import {
   FaMobileAlt, FaClock, FaTv, FaYoutube, FaArrowRight, FaQrcode,
@@ -13,8 +13,19 @@ export default function Home() {
   const router = useRouter();
   const [joining, setJoining] = useState(false);
 
-  const createRoom = () => {
+  const createRoom = async () => {
     const roomId = uuidv4().slice(0, 8);
+    try {
+      await set(ref(db, `rooms/${roomId}`), {
+        _createdAt: Date.now(),
+        lastActiveAt: Date.now(),
+        currentSong: null,
+        playState: "paused",
+        queue: null,
+      });
+    } catch (e) {
+      console.warn("Failed to pre-create room:", e);
+    }
     router.push(`/room/${roomId}`);
   };
 
