@@ -246,6 +246,10 @@ export default function RoomPage() {
     setShowScore(true);
     launchConfetti();
 
+    const sfx = new Audio("/sounds/score-fanfare.m4a");
+    sfx.currentTime = 2;
+    sfx.play().catch(() => {});
+
     const start = performance.now();
     const from = 0;
     const to = score;
@@ -265,6 +269,8 @@ export default function RoomPage() {
       setShowScore(false);
       setDisplayScore(0);
       scoringTimeoutRef.current = null;
+      sfx.pause();
+      sfx.currentTime = 0;
     }, showDuration);
 
     const advanceDelayMs = Math.max(0, (remainingAtTrigger - 2) * 1000);
@@ -282,8 +288,13 @@ export default function RoomPage() {
     const container = confettiRef.current;
     if (!container) return;
     container.innerHTML = "";
-    const colors = ["#2563eb", "#3b82f6", "#60a5fa", "#1e3a5f", "#f8fafc"];
     const pieces = 40;
+    const colors = Array.from({ length: 3 }, () => {
+      const h = Math.floor(Math.random() * 360);
+      const s = 30 + Math.floor(Math.random() * 31);
+      const l = 80 + Math.floor(Math.random() * 11);
+      return `hsl(${h}, ${s}%, ${l}%)`;
+    });
     for (let i = 0; i < pieces; i++) {
       const el = document.createElement("div");
       el.className = "confetti";
