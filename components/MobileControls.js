@@ -238,8 +238,9 @@ export default function MobileControls({ roomId }) {
     <div className="h-screen bg-background text-foreground flex flex-col">
       <header className="shrink-0 flex items-center gap-2 px-3 py-2 bg-card border-b border-border z-10">
         <img src="/logo-singging.png" alt="Karaoke SingGing" className="h-8" />
-        <span className="font-400 text-sm">Karaoke SingGing</span>
-      </header>
+          <span className="font-400 text-sm">Karaoke SingGing</span>
+          <span className="ml-auto text-xs text-muted-foreground font-mono tracking-wider">{roomId}</span>
+        </header>
 
       {activeTab === "search" && (
         <div className="shrink-0 px-2 pt-2 pb-1 bg-background">
