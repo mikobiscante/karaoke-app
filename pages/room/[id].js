@@ -198,6 +198,27 @@ export default function RoomPage() {
     logEvent(analytics, "ad_shown", { slot: "sidebar", roomId: id || null });
   }, [id]);
 
+  const autoAdvance = async () => {
+    if (!id) return;
+    const qRef = ref(db, `rooms/${id}/queue`);
+    const snap = await get(qRef);
+    const data = snap.val() || {};
+    const ordered = Object.entries(data).map(([key, value]) => ({ key, ...value })).sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+    if (ordered.length === 0) return;
+    const firstItem = ordered[0];
+    await set(ref(db, `rooms/${id}/currentSong`), {
+      videoId: firstItem.videoId, title: firstItem.title, thumbnail: firstItem.thumbnail,
+    });
+    await set(ref(db, `rooms/${id}/playState`), "playing");
+  };
+
+  useEffect(() => {
+    if (!id) return;
+    if (currentSong === null && queue.length > 0) {
+      autoAdvance();
+    }
+  }, [currentSong, queue, id]);
+
   const advanceQueue = async () => {
     if (!id) return;
     const qRef = ref(db, `rooms/${id}/queue`);
