@@ -33,6 +33,10 @@
 
   --font-weight-300: 300;
   --font-weight-400: 400;
+
+  --animate-pop-in: pop-in 0.4s ease-out;
+  --animate-slide-in-left: slide-in-left 0.3s ease-out;
+  --animate-highlight-fade: highlight-fade 1.5s ease-out forwards;
 }
 
 :root {
@@ -150,4 +154,20 @@ button:not(:disabled),
 @media (max-width: 640px) {
   .score-number { font-size: 72px; }
   .score-popover { padding: 30px; width: 90vw; }
+}
+
+@keyframes pop-in {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+@keyframes slide-in-left {
+  0% { opacity: 0; transform: translateX(-12px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes highlight-fade {
+  0% { background-color: rgba(37, 99, 235, 0.2); border-color: rgba(37, 99, 235, 0.4); }
+  100% { background-color: transparent; border-color: transparent; }
 }

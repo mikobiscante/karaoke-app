@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import { ref, push, set, onValue } from "firebase/database";
 import { db } from "../utils/firebase";
-import { FaPlay, FaPause, FaStepForward, FaSearch, FaPlus, FaCheck, FaFire } from "react-icons/fa";
+import { FaPlay, FaPause, FaStepForward, FaSearch, FaPlus, FaFire } from "react-icons/fa";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
 
@@ -268,16 +268,13 @@ export default function MobileControls({ roomId }) {
         </div>
         <Button
           onClick={() => !isAdded && handleQueue({ videoId: item.videoId, title: item.title, thumbnail: item.thumbnail })}
-          variant="secondary"
+          variant={isAdded ? "secondary" : "outline"}
           size="sm"
           disabled={isAdded}
-          aria-label={isAdded ? "Already added" : "Add song to queue"}
+          className={isAdded ? "animate-pop-in" : ""}
+          aria-label={isAdded ? "Added to queue" : "Add song to queue"}
         >
-          {isAdded ? (
-            <FaCheck className="text-green-400" />
-          ) : (
-            <FaPlus />
-          )}
+          <FaPlus className={isAdded ? "text-green-400" : ""} />
         </Button>
       </div>
     );
@@ -380,7 +377,7 @@ export default function MobileControls({ roomId }) {
               ) : (
                 <ul className="space-y-1.5">
                   {queue.map((v) => (
-                    <li key={v.key} className="flex items-center gap-1.5 bg-card/50 p-1.5 rounded border border-border/30">
+                    <li key={v.key} className={`flex items-center gap-1.5 bg-card/50 p-1.5 rounded border border-border/30 ${recentlyAdded === v.videoId ? 'animate-slide-in-left animate-highlight-fade' : ''}`}>
                       <img src={v.thumbnail} alt="" className="w-14 h-9 rounded object-cover shrink-0" />
                       <div className="flex-1 text-sm font-300 line-clamp-2">{v.title}</div>
                     </li>
