@@ -10,7 +10,10 @@ export default async function handler(req, res) {
     q: (q + " karaoke"),
     key,
     maxResults: "8",
-    type: "video"
+    type: "video",
+    videoEmbeddable: "true",
+    videoSyndicated: "true",
+    safeSearch: "moderate"
   });
   if (req.query.pageToken) params.set("pageToken", req.query.pageToken);
 
