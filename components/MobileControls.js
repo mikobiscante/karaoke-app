@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import { ref, push, set, onValue } from "firebase/database";
 import { db } from "../utils/firebase";
-import { FaPlay, FaPause, FaStepForward, FaSearch, FaListUl, FaFire } from "react-icons/fa";
+import { FaPlay, FaPause, FaStepForward, FaSearch, FaPlus, FaCheck, FaFire } from "react-icons/fa";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
 
@@ -252,28 +252,36 @@ export default function MobileControls({ roomId }) {
     fetchPopularSongs(true);
   };
 
-  const renderResultItem = (item) => (
-    <div key={item.videoId} className="flex items-center gap-1.5 p-1.5 rounded hover:bg-accent transition">
-      <img src={item.thumbnail} alt="" className="w-16 h-10 rounded object-cover shrink-0" />
-      <div className="min-w-0 flex-1">
-        <div className="font-400 text-sm line-clamp-2 break-words">{item.title}</div>
-        {item.channelTitle && (
-          <div className="text-xs text-muted-foreground font-300 truncate">{item.channelTitle}</div>
-        )}
+  const isSongQueued = (videoId) => queue.some((song) => song.videoId === videoId);
+
+  const renderResultItem = (item) => {
+    const alreadyAdded = isSongQueued(item.videoId);
+    const isAdded = alreadyAdded || recentlyAdded === item.videoId;
+    return (
+      <div key={item.videoId} className="flex items-center gap-1.5 p-1.5 rounded hover:bg-accent transition">
+        <img src={item.thumbnail} alt="" className="w-16 h-10 rounded object-cover shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="font-400 text-sm line-clamp-2 break-words">{item.title}</div>
+          {item.channelTitle && (
+            <div className="text-xs text-muted-foreground font-300 truncate">{item.channelTitle}</div>
+          )}
+        </div>
+        <Button
+          onClick={() => !isAdded && handleQueue({ videoId: item.videoId, title: item.title, thumbnail: item.thumbnail })}
+          variant="secondary"
+          size="sm"
+          disabled={isAdded}
+          aria-label={isAdded ? "Already added" : "Add song to queue"}
+        >
+          {isAdded ? (
+            <FaCheck className="text-green-400" />
+          ) : (
+            <FaPlus />
+          )}
+        </Button>
       </div>
-      <Button
-        onClick={() => handleQueue({ videoId: item.videoId, title: item.title, thumbnail: item.thumbnail })}
-        variant="secondary"
-        size="sm"
-      >
-        {recentlyAdded === item.videoId ? (
-          <span className="text-green-400 animate-bounce inline-block">✓</span>
-        ) : (
-          <FaListUl />
-        )}
-      </Button>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
