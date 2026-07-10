@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import { ref, push, set, onValue } from "firebase/database";
 import { db } from "../utils/firebase";
-import { FaPlay, FaPause, FaStepForward, FaSearch, FaPlus, FaFire } from "react-icons/fa";
+import { FaPlay, FaPause, FaStepForward, FaSearch, FaPlusCircle, FaFire } from "react-icons/fa";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
 
@@ -274,7 +274,7 @@ export default function MobileControls({ roomId }) {
           className={isAdded ? "animate-pop-in" : ""}
           aria-label={isAdded ? "Added to queue" : "Add song to queue"}
         >
-          <FaPlus className={isAdded ? "text-green-400" : ""} />
+          <FaPlusCircle className={isAdded ? "text-green-400" : ""} />
         </Button>
       </div>
     );
